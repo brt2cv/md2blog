@@ -1,3 +1,5 @@
+tool/cnblog/
+
 **/ui/*[!*.ui]
 **/.vscode/*[!demo/]
 
