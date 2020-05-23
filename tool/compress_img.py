@@ -9,7 +9,7 @@ import pngquant
 
 def compress_by_pngquant(path_img):
     """ png32转png8，直接替换原文件 """
-    pngquant.config()  # "/usr/bin/pngquant", min_quality=60, max_quality=90
+    pngquant.config(min_quality=85, max_quality=95)  # "/usr/bin/pngquant", min_quality=60, max_quality=90
 
     if os.path.isdir(path_img):
         quant_dir(dir=path_img, override=True, delete=0)

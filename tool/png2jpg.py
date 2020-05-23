@@ -4,7 +4,7 @@
 # @Link    : https://gitee.com/brt2
 # @Version : 0.0.1
 
-import os.path
+import os
 from PIL import Image
 
 def _callBash():
@@ -27,6 +27,30 @@ def png2jpg(path_png, quality):
     im = Image.open(path_png)  # rgba
     im_rgb = im.convert(mode="RGB")
     im_rgb.save(path_new, quality=quality)
+    return path_new
+
+
+IMG_SMALLER_PREFIX = "keepng_"
+KEEP_SIZE_WEIGHT = 0.75  # 除非显著压缩，否则保留原图像
+
+def png2smaller(path_png, quality):
+    """ png2jpg()未考虑转换结果，_ex()则对比转换结果，
+        如果转换后文件变大了，则保留原png.
+        为了避免下次重复转换png，文件名增加前缀 keepng_
+    """
+    if os.path.basename(path_png).startswith(IMG_SMALLER_PREFIX):
+        return
+
+    path_new = png2jpg(path_png, quality)
+    # 比较size
+    if os.path.getsize(path_new) < os.path.getsize(path_png) * KEEP_SIZE_WEIGHT:
+        os.remove(path_png)
+    else:
+        os.remove(path_new)
+        path_new = os.path.join(os.path.dirname(path_png),
+                   IMG_SMALLER_PREFIX + os.path.basename(path_png))
+        os.rename(path_png, path_new)
+    return path_new
 
 def png_to_jpg_mask(pngPath, quality):
     im = Image.open(pngPath)

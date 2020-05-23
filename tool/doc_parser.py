@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# @Date    : 2020-05-22
+# @Date    : 2020-05-23
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
 # @Version : 0.1.2
 
+import os.path
 import re
 
 
@@ -48,21 +49,25 @@ class MarkdownParser:
             "index_H1": None,
             "find_TOC": False,
             "index_H2": None,
-            "has_metadata": False,
-            "has_serial_num": None
+            "has_metadata": False
         }
 
     def get_text(self):
         """ 并不能保证text内容不被改写 """
         return self.__text_lines
 
+    def _set_text(self, content):
+        if not content.endswith("\n"):
+            content += "\n"
+        return content
+
     def modify_text(self, index, content):
         self.check_lock()
-        self.__text_lines[index] = content
+        self.__text_lines[index] = self._set_text(content)
 
     def insert_text(self, index, content):
         self.check_lock()
-        self.__text_lines.insert(index, content)
+        self.__text_lines.insert(index, self._set_text(content))
 
     def pop_text(self, index):
         self.check_lock()
@@ -106,8 +111,8 @@ class MarkdownParser:
             elif line.startswith("## "):  # 检测H2之前的文块
                 self.check_list["index_H2"] = index
                 # 检测‘has_serial_num’
-                H2_text = line[2:].lstrip()
-                self.check_list["has_serial_num"] = H2_text.startswith("1. ")
+                # H2_text = line[2:].lstrip()
+                # self.check_list["has_serial_num"] = H2_text.startswith("1. ")
                 break
             # 检测title
             elif line.startswith("# "):  # H1
@@ -132,9 +137,12 @@ class MarkdownParser:
 
         dict_images = {}  # line: url
         for index, line in enumerate(self.get_text()):
-            url_img_all = match_regex(self.pattern_images[type_], line)
-            if url_img_all:
-                dict_images[index] = url
+            url_img = match_regex(self.pattern_images[type_], line)
+            if url_img:
+                # 相对路径转换
+                if not url_img.startswith("http") and not os.path.isabs(url_img):
+                    url_img = os.path.join(os.path.dirname(self.file_path), url_img)
+                dict_images[index] = url_img
         return dict_images
 
     def process_images(self, dict_images, callback):
@@ -142,4 +150,6 @@ class MarkdownParser:
         """
         self.unlock_text()
         for line_idx, url_img in dict_images.items():
-            self.modify_text(line_idx， callback(url_img))
+            url_new = callback(url_img)
+            if url_new:
+                self.modify_text(line_idx, f"![]({url_new})")

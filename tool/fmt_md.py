@@ -1,4 +1,11 @@
+#!/usr/bin/env python3
+# @Date    : 2020-05-23
+# @Author  : Bright Li (brt2@qq.com)
+# @Link    : https://gitee.com/brt2
+# @Version : 0.0.2
+
 import os
+import re
 import glob
 from collections import defaultdict
 
@@ -19,7 +26,10 @@ class MarkdownFormatter(MarkdownParser):
         self._update_serial_num()
 
         # 图像处理
-        self.img_processing()
+        if input("是否尝试下载超链接图片？[Y/n]: ").lower() != "n":
+            self.download_img()
+        # 默认启用 png -> jpg
+        self.convert_png2jpg()
 
     def overwrite(self):
         with open(self.file_path, "w", encoding="utf8") as fp:
@@ -41,7 +51,7 @@ categories  = {list_as_str(self.metadata.get('categories'))}
 keywords    = {list_as_str(self.metadata.get('keywords'))}
 +++ -->
 """
-        self.text_lines.insert(0, str_md_info)
+        self.insert_text(0, str_md_info)
 
     def _update_serial_num(self):
         """ 使用3级序号：1.2.4. xxx """
@@ -55,28 +65,57 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
                     break
             return serial_num
 
+        pattern_headline = re.compile(r"(#+) +(\d\.\S*)? *(.*)")
+
         def update_line(line):
             serial_num = get_serial()
-            if self.check_list["has_serial_num"]:
-                prefix, _, text = line.split(maxsplit=2)
-            else:
-                prefix, text = line.split(maxsplit=1)
-
+            # if self.check_list["has_serial_num"]:
+            #     prefix, _, text = line.split(maxsplit=2)
+            # else:
+            #     prefix, text = line.split(maxsplit=1)
+            prefix, _, text = re.match(pattern_headline, line).groups()
             return f"{prefix} {serial_num} {text}"
 
-        for index, line in enumerate(self.text_lines):
+        for index, line in enumerate(self.get_text()):
             if line.startswith("## "):
                 x += 1
                 y,z = 0,0
-                self.text_lines[index] = update_line(line)
-                self.set_
+                self.modify_text(index, update_line(line))
             elif line.startswith("### "):
                 y += 1
                 z = 0
-                self.text_lines[index] = update_line(line)
+                self.modify_text(index, update_line(line))
             elif line.startswith("#### "):
                 z += 1
-                self.text_lines[index] = update_line(line)
+                self.modify_text(index, update_line(line))
+
+    def download_img(self):
+        from download_img_link import download_src
+
+        dict_images = self.get_images("link")
+        # 生成图像目录
+        dir_img, _ = os.path.splitext(self.file_path)
+        if not os.path.exists(dir_img):
+            os.makedirs(dir_img)
+        self.process_images(dict_images, lambda url: download_src(url, dir_img))
+
+        # 判断下载图像的size，执行resize或压缩
+        self.compress_bigimg()
+
+    def convert_png2jpg(self):
+        from png2jpg import png2smaller  # png2jpg
+
+        dict_images = self.get_images("png")
+        self.process_images(dict_images, lambda url: png2smaller(url, 85))
+        # 删除原png文件
+        # for path_img in dict_images.values():
+        #     os.remove(path_img)
+
+    def compress_jpg(self):
+        pass
+
+    def compress_bigimg(self):
+        pass
 
 
 #####################################################################
@@ -91,6 +130,7 @@ def getopt():
 def format_one_doc(fmt, path_file):
     fmt.load_file(path_file)
     fmt.format()
+
     fmt.overwrite()
 
 def format_dir(fmt, path_dir):
