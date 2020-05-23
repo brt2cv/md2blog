@@ -35,7 +35,7 @@
     + 利用fmt_md.py格式化文档
         + head元数据
         + 去除H1标题
-        + 检测权重，并重命名
+        + 检测权重，通过权重配置mkdocs的目录结构
     + 选择是否下载link图像（download_img_link.py）
     + 图片压缩（png2jpg_md_img.py）
     + 使用db_mgr.py对文档树进行管理

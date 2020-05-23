@@ -10,6 +10,9 @@ import re
 class NullMarkdownFile(Exception):
     """ 空文件 """
 
+class TextLocked(Exception):
+    """ 文本内容已加锁，当前不可修改 """
+
 # class MetaDataMissing(Exception):
 #     """ 缺失元数据 """
 
@@ -22,13 +25,16 @@ class MarkdownParser:
         1. 含H1格式的原生md文件（mkdocs）
         2. title = "xxx"... 定义元数据的hugo格式
     """
-    pattern_h1 = re.compile(r"# (.*)\n")
-    pattern_img_link = re.compile(r"!\[\]\((http.*?)\)")
-    pattern_img_png = re.compile(r"!\[\]\((.*\.png)\)")
+    pattern_images = {
+        "all":  re.compile(r"!\[\]\((.*)\)"),
+        "png":  re.compile(r"!\[\]\((.*\.png)\)"),
+        "link": re.compile(r"!\[\]\((http.*?)\)"),
+    }
 
     def _clear_metadata(self):
         self.file_path = ""
-        self.text_lines = []
+        self.__text_lines = []
+        self.__text_lock = False
         self.metadata = {
             "title": "",
             "description": "",
@@ -46,20 +52,46 @@ class MarkdownParser:
             "has_serial_num": None
         }
 
+    def get_text(self):
+        """ 并不能保证text内容不被改写 """
+        return self.__text_lines
+
+    def modify_text(self, index, content):
+        self.check_lock()
+        self.__text_lines[index] = content
+
+    def insert_text(self, index, content):
+        self.check_lock()
+        self.__text_lines.insert(index, content)
+
+    def pop_text(self, index):
+        self.check_lock()
+        self.__text_lines.pop(index)
+
+    def lock_text(self):
+        self.__text_lock = True
+
+    def unlock_text(self):
+        self.__text_lock = False
+
+    def check_lock(self):
+        if self.__text_lock:
+            raise TextLocked()
+
     def load_file(self, path_file):
         self._clear_metadata()
         self.file_path = path_file
         with open(self.file_path, "r", encoding="utf8") as fp:
-            self.text_lines = fp.readlines()
+            self.__text_lines = fp.readlines()
 
-        if not self.text_lines:
+        if not self.get_text():
             raise NullMarkdownFile()
 
         self._parse_metadata()
 
     def _parse_metadata(self):
         edit_meta = False
-        for index, line in enumerate(self.text_lines):
+        for index, line in enumerate(self.get_text()):
             if edit_meta:
                 if line.startswith("+++ -->"):
                     edit_meta = False
@@ -86,3 +118,28 @@ class MarkdownParser:
                 self.check_list["find_TOC"] = True
 
         # print("MetaData:", self.metadata)
+
+    def get_images(self, type_="all"):
+        """ 临时有效，会加锁文本数据
+            type_ in ("all", "png", "link")
+        """
+        self.lock_text()
+
+        def match_regex(pattern, text):
+            """ 适用于一个group的正则式 """
+            re_match = re.search(pattern, text)
+            return re_match.group(1) if re_match else None
+
+        dict_images = {}  # line: url
+        for index, line in enumerate(self.get_text()):
+            url_img_all = match_regex(self.pattern_images[type_], line)
+            if url_img_all:
+                dict_images[index] = url
+        return dict_images
+
+    def process_images(self, dict_images, callback):
+        """ callback(url) -> new_url
+        """
+        self.unlock_text()
+        for line_idx, url_img in dict_images.items():
+            self.modify_text(line_idx， callback(url_img))

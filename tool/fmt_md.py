@@ -9,14 +9,21 @@ class MarkdownFormatter(MarkdownParser):
 
     def format(self):
         if not self.check_list["find_TOC"]:
-            self.text_lines.insert(self.check_list["index_H2"], "[TOC]\n\n")
+            self.insert_text(self.check_list["index_H2"], "[TOC]\n\n")
 
         if self.check_list["index_H1"]:
-            self.text_lines.pop(self.check_list["index_H1"])
+            self.pop_text(self.check_list["index_H1"])
 
         if not self.check_list["has_metadata"]:
             self._insert_meta()
         self._update_serial_num()
+
+        # 图像处理
+        self.img_processing()
+
+    def overwrite(self):
+        with open(self.file_path, "w", encoding="utf8") as fp:
+            fp.writelines(self.get_text())
 
     def _insert_meta(self):
         def list_as_str(data: list):
@@ -62,6 +69,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
                 x += 1
                 y,z = 0,0
                 self.text_lines[index] = update_line(line)
+                self.set_
             elif line.startswith("### "):
                 y += 1
                 z = 0
@@ -69,10 +77,6 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
             elif line.startswith("#### "):
                 z += 1
                 self.text_lines[index] = update_line(line)
-
-    def overwrite(self):
-        with open(self.file_path, "w", encoding="utf8") as fp:
-            fp.writelines(self.text_lines)
 
 
 #####################################################################
@@ -121,8 +125,11 @@ if __name__ == "__main__":
         path = input("\n请输入待处理文件path(支持直接拖拽): ")
         while True:
             path = path.strip()
+            if os.path.exists(path):
+                format_anything(fmt, path)
+            else:
+                print(f"Error: File [{path}] NOT found.")
 
-            format_anything(fmt, path)
             path = input("继续输入path，按[Q]退出: ")
             if path.lower() == "q":
                 break
