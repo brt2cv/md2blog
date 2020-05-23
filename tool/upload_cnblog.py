@@ -10,6 +10,7 @@ import xmlrpc.client
 
 from db_mgr import DocumentsMgr
 
+
 class CnblogManager:
     def __init__(self, path_conf):
         self.dict_conf = {
@@ -21,6 +22,7 @@ class CnblogManager:
         }
         self.load_config(path_conf)
         self.cnblog_server = xmlrpc.client.ServerProxy(self.dict_conf["blog_url"])
+        self.mime = None
         self.doc_mgr = DocumentsMgr()
 
     def load_config(self, path_conf):
@@ -30,17 +32,56 @@ class CnblogManager:
             self.dict_conf[key] = value
 
     def _upload_img(self, path_img):
-        pass
+        file_name = os.path.basename(path_img)
+        _, suffix = os.path.splitext(file_name)
+        with open(path_img, 'rb') as fp:
+            file = {
+                "bits": fp.read(),
+                "name": file_name,
+                "type": self.mime[suffix]
+            }
+        url_new = self.cnblog_server.metaWeblog.newMediaObject(
+                    self.dict_conf["blog_id"],
+                    self.dict_conf["username"],
+                    self.dict_conf["password"],
+                    file)
+        return url_new["url"]
 
-    def _new_blog(self, dict_post):
+    def _load_mime(self):
+        with open("mime.json", "r") as fp:
+            self.mime = json.load(fp)
+
+    def _new_blog(self, md_parser):
+        if self.mime is None:
+            self._load_mime()
+
+        # 上传图片
+        dict_images = md_parser.get_images("all")
+        list_remove = []
+        for line, url in dict_images.items():
+            if url.startswith("http"):
+                list_remove.append(line)
+
+        for line in list_remove:
+            del dict_images[line]
+
+        md_parser.process_images(dict_images, self._upload_img)  # 更新上传服务器的URL
+        dict_post = {
+            "title": md_parser.metadata["title"],
+            "categories": ["[Markdown]"] + md_parser.metadata["categories"],
+            "description": "".join(md_parser.get_text())
+        }
         postid = self.cnblog_server.metaWeblog.newPost(
                     self.dict_conf["blog_id"],
                     self.dict_conf["username"],
                     self.dict_conf["password"],
                     dict_post, True)
+
         print(f">> 完成blog的上传: [{postid}]")
 
-    def _repost_blog(self, dict_post, postid):
+        # 更新本地图像链接，用于修改文档时调用已上传图像
+
+    def _repost_blog(self, md_parser, postid):
         """ 重新发布 """
         postid = self.cnblog_server.metaWeblog.editPost(
                     postid,
@@ -50,15 +91,11 @@ class CnblogManager:
         print(f">> 完成blog的更新: [{postid}]")
 
     def post_blog(self, md_parser):
-        dict_post = dict(description="".join(md_parser.get_text()),
-                         title=md_parser.metadata["title"],
-                         categories=["[Markdown]"] + md_parser.metadata["categories"])
-
         postid = self.doc_mgr.exist_doc(md_parser.metadata["title"])
         if postid:
-            self._repost_blog(dict_post, postid)
+            self._repost_blog(md_parser, postid)
         else:
-            self._new_blog(dict_post)
+            self._new_blog(md_parser)
 
     def delete_blog(self, title):
         pass

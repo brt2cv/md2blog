@@ -153,4 +153,5 @@ class MarkdownParser:
         for line_idx, url_img in dict_images.items():
             url_new = callback(url_img)
             if url_new:
-                self.modify_text(line_idx, f"![]({url_new})")
+                num_space = self.get_text()[line_idx].find("!")
+                self.modify_text(line_idx, " "*num_space + f"![]({url_new})")
