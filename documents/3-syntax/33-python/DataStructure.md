@@ -2,13 +2,12 @@
 +++
 title       = "Python数据结构"
 description = ""
-date        = ""
+date        = "2020-05-23"
 weight      = 3
 tags        = ["usual"]
-categories  = ["3-syntax", "33-python"]
+categories  = ["3-syntax","33-python"]
 keywords    = []
 +++ -->
-# Python数据结构
 
 [TOC]
 
@@ -67,7 +66,7 @@ issuperset()  # 父集
 issubset()  # 子集
 ```
 
-![](DataStructure/2019-11-25-21-50-24.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/2019-11-25-21-50-24.jpg)
 
 ## 4. dict
 > * [官网](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict)
@@ -131,21 +130,21 @@ dictMerged.update(dict2)
 
 以下字典组合方式可能失败，原因在于此方式要求keyword必须为str：
 
-![](DataStructure/2019-11-25-21-56-11.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/keepng_2019-11-25-21-56-11.png)
 
 合并两个字典：
 
-![](DataStructure/2019-11-25-21-57-18.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/2019-11-25-21-57-18.jpg)
 
 支持非str类型的主键：
 
-![](DataStructure/2019-11-25-21-58-08.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/keepng_2019-11-25-21-58-08.png)
 
 即便主键重复也没关系：
 
-![](DataStructure/2019-11-25-21-58-40.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/keepng_2019-11-25-21-58-40.png)
 
-### 字典排序
+### 4.2. 字典排序
 
 ```py
 def func_dict_sort(dict_, sort_type):
@@ -274,7 +273,7 @@ if __name__ == '__main__':
 
 更类似C语言的数组，要求每个元素的类型一致。
 
-![](DataStructure/2019-11-25-22-15-19.png)
+![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/keepng_2019-11-25-22-15-19.png)
 
 ```py
 array.itemsize
@@ -378,7 +377,7 @@ Counter({'g': 2, 'm': 2, 'r': 2, 'a': 1, 'i': 1, 'o': 1, 'n': 1, 'p': 1})
 
     获取elements就是将其中的key值乘以出现次数全部打印出来，当然需要通过list或者其他方式将其所有元素全部展示出来（负数不会被打印）。
 
-    ![](DataStructure/DataStructure0.png)
+    ![](/home/brt/workspace/md/documents/3-syntax/33-python/DataStructure/DataStructure0.jpg)
 
 * most_common([n])
 
