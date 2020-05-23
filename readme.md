@@ -54,7 +54,7 @@
 
 + 标签
 
-    通过hugo_info记录标签，并跟踪至数据库中。
+    通过hugo_info记录标签，并跟踪至~~数据库~~json中（由于db不支持git跟踪，改为json）。
 
 + git管理
 

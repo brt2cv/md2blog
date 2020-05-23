@@ -15,6 +15,8 @@ from doc_parser import MarkdownParser, NullMarkdownFile
 class MarkdownFormatter(MarkdownParser):
 
     def format(self):
+        self._update_categories()
+
         if not self.check_list["find_TOC"]:
             self.insert_text(self.check_list["index_H2"], "[TOC]\n\n")
 
@@ -23,6 +25,7 @@ class MarkdownFormatter(MarkdownParser):
 
         if not self.check_list["has_metadata"]:
             self._insert_meta()
+
         self._update_serial_num()
 
         # 图像处理
@@ -88,6 +91,12 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
             elif line.startswith("#### "):
                 z += 1
                 self.modify_text(index, update_line(line))
+
+    def _update_categories(self):
+        # 通过相对路径
+        path_dir = os.path.dirname(self.file_path)
+        path_rel = os.path.relpath(path_dir, "../documents")  # ??
+        self.metadata["categories"] = path_rel.split("/")
 
     def download_img(self):
         from download_img_link import download_src
