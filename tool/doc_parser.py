@@ -40,7 +40,7 @@ class MarkdownParser:
             "title": "",
             "description": "",
             "date": None,
-            "weight": 3,
+            "weight": 5,
             "tags": [],
             "categories": [],
             "keywords": []
@@ -49,25 +49,26 @@ class MarkdownParser:
             "index_H1": None,
             "find_TOC": False,
             "index_H2": None,
-            "has_metadata": False
         }
 
     def get_text(self):
-        """ 并不能保证text内容不被改写 """
         return self.__text_lines
 
-    def _set_text(self, content):
+    def set_text(self, list_lines):
+        self.__text_lines = list_lines
+
+    def _set_line(self, content):
         if not content.endswith("\n"):
             content += "\n"
         return content
 
     def modify_text(self, index, content):
         self.check_lock()
-        self.__text_lines[index] = self._set_text(content)
+        self.__text_lines[index] = self._set_line(content)
 
     def insert_text(self, index, content):
         self.check_lock()
-        self.__text_lines.insert(index, self._set_text(content))
+        self.__text_lines.insert(index, self._set_line(content))
 
     def pop_text(self, index):
         self.check_lock()
@@ -95,11 +96,14 @@ class MarkdownParser:
         self._parse_metadata()
 
     def _parse_metadata(self):
+        self.meta_range = [None, None]
+
         edit_meta = False
         for index, line in enumerate(self.get_text()):
             if edit_meta:
                 if line.startswith("+++ -->"):
                     edit_meta = False
+                    self.meta_range[1] = index
                 else:
                     key, value = line.split("=")
                     self.metadata[key.strip()] = eval(value)
@@ -107,22 +111,19 @@ class MarkdownParser:
 
             if line.startswith("+++"):
                 edit_meta = True
-                self.check_list["has_metadata"] = True
-            elif line.startswith("## "):  # 检测H2之前的文块
+                self.meta_range[0] = index -1
+                # self.check_list["has_metadata"] = True
+            elif line.startswith("## "):
                 self.check_list["index_H2"] = index
-                # 检测‘has_serial_num’
                 # H2_text = line[2:].lstrip()
                 # self.check_list["has_serial_num"] = H2_text.startswith("1. ")
                 break
-            # 检测title
             elif line.startswith("# "):  # H1
                 if not self.metadata["title"]:
                     self.metadata["title"] = line[2:].strip()
                 self.check_list["index_H1"] = index
             elif line.startswith("[TOC]"):
                 self.check_list["find_TOC"] = True
-
-        # print("MetaData:", self.metadata)
 
     def get_images(self, type_="all"):
         """ 临时有效，会加锁文本数据

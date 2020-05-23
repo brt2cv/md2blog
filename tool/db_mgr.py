@@ -39,7 +39,7 @@ def git_status(type_):
     }
     return dict_status[map_type2files[type_]]
 
-class DocumentsTree:
+class DocumentsMgr:
     def __init__(self):
         self.dict_conf = {
                 "docs_dir": REPO_ROOT_DIR + "/documents/",
@@ -49,6 +49,7 @@ class DocumentsTree:
             # path_tree: {
             #     path_doc: {
             #         "weight": 0,
+            #         "postid": 1234xxx,
             #         "tags"  : []
             #     }
             # }
@@ -68,6 +69,10 @@ class DocumentsTree:
     def add_doc(self, path_doc):
         pass
 
+    def exist_doc(self, doc_title):
+        """ return str(postid) or False """
+        return False
+
     def modify_doc(self, path_doc):
         pass
 
@@ -83,10 +88,16 @@ class DocumentsTree:
     def get_docs_of_category(self, category_name):
         pass
 
+    def sync_database(self):
+        """ 从cnblog下拉最新的元数据，并更新本地数据库：
+            由于可能从cnblog上增加了label等数据，导致本地数据过时。
+        """
+        pass
+
 
 if __name__ == "__main__":
     list_untracked = repo.untracked_files  # 新建项
     list_modified = get_status("modified")  # 修改项
 
-    tree = DocumentsTree()
-    # tree.load_config()
+    mgr = DocumentsMgr()
+    # mgr.load_config()

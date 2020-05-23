@@ -23,8 +23,9 @@ class MarkdownFormatter(MarkdownParser):
         if self.check_list["index_H1"]:
             self.pop_text(self.check_list["index_H1"])
 
-        if not self.check_list["has_metadata"]:
-            self._insert_meta()
+        self._remove_old_meta()
+        # if not self.check_list["has_metadata"]:
+        self._insert_meta()
 
         self._update_serial_num()
 
@@ -38,16 +39,31 @@ class MarkdownFormatter(MarkdownParser):
         with open(self.file_path, "w", encoding="utf8") as fp:
             fp.writelines(self.get_text())
 
+    def _update_categories(self):
+        # 通过相对路径
+        path_dir = os.path.dirname(self.file_path)
+        path_rel = os.path.relpath(path_dir, "../documents")  # ??
+        self.metadata["categories"] = path_rel.split("/")
+
+    def _remove_old_meta(self):
+        __text_lines = self.get_text()
+        meta_start, meta_end = self.meta_range
+        if meta_start is not None:
+            self.set_text(__text_lines[:meta_start] + __text_lines[meta_end +1:])
+
     def _insert_meta(self):
+        import datetime
+
         def list_as_str(data: list):
             # str(data) -> 单引号，不符合markdown标准
             return "[\"" + "\",\"".join(data) + "\"]" if data else "[]"
 
+        # date数据由于使用eval()反序列化，故必须使用""作为字符串
         str_md_info = f"""<!--
 +++
 title       = "{self.metadata['title']}"
 description = "{self.metadata['description']}"
-date        = "{self.metadata['date']}"
+date        = "{datetime.date.today()}"
 weight      = {self.metadata['weight']}
 tags        = {list_as_str(self.metadata.get('tags'))}
 categories  = {list_as_str(self.metadata.get('categories'))}
@@ -91,12 +107,6 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
             elif line.startswith("#### "):
                 z += 1
                 self.modify_text(index, update_line(line))
-
-    def _update_categories(self):
-        # 通过相对路径
-        path_dir = os.path.dirname(self.file_path)
-        path_rel = os.path.relpath(path_dir, "../documents")  # ??
-        self.metadata["categories"] = path_rel.split("/")
 
     def download_img(self):
         from download_img_link import download_src
