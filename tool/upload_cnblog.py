@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # @Date    : 2020-05-23
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
@@ -47,8 +47,8 @@ class CnblogManager:
         if title_or_postid.isdecimal():
             postid = title_or_postid
         else:
-            postid = self.doc_mgr.get_postid(title)
-            if not isinstance(postid, str):  # list or tuple...
+            postid = self.doc_mgr.get_postid(title_or_postid)
+            if isinstance(postid, list):
                 raise PostidNotUnique(f"获取到postid不唯一，请指定postid值: 【{postid}】")
         return postid
 

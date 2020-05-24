@@ -1,3 +1,4 @@
 pillow
-pngquant
+#pngquant
 GitPython
+requests
