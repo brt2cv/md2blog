@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # @Date    : 2020-05-23
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
@@ -12,7 +12,7 @@ def compress_by_pngquant(path_img):
     pngquant.config(min_quality=85, max_quality=95)  # "/usr/bin/pngquant", min_quality=60, max_quality=90
 
     if os.path.isdir(path_img):
-        quant_dir(dir=path_img, override=True, delete=0)
+        pngquant.quant_dir(dir=path_img, override=True, delete=0)
     else:
         pngquant.quant_image(path_img, override=True, delete=True)
 
