@@ -69,9 +69,12 @@ class DocumentsMgr:
     def add_doc(self, path_doc):
         pass
 
+    def get_postid(self, doc_title):
+        """ return str(postid) or None if not exist """
+        return None
+
     def exist_doc(self, doc_title):
-        """ return str(postid) or False """
-        return False
+        return self.get_postid(doc_title)
 
     def modify_doc(self, path_doc):
         pass
