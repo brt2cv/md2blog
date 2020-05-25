@@ -5,8 +5,8 @@
 # @Version : 0.0.2
 
 import os
-from pathlib import Path
 import re
+import datetime
 import glob
 from collections import defaultdict
 
@@ -16,7 +16,7 @@ from doc_parser import MarkdownParser, NullMarkdownFile
 class MarkdownFormatter(MarkdownParser):
 
     def format(self):
-        self._update_categories()
+        # self._update_categories()
 
         if not self.check_list["find_TOC"]:
             self.insert_text(self.check_list["index_H2"], "[TOC]\n\n")
@@ -24,59 +24,58 @@ class MarkdownFormatter(MarkdownParser):
         if self.check_list["index_H1"]:
             self.pop_text(self.check_list["index_H1"])
 
-        self._remove_old_meta()
-        # if not self.check_list["has_metadata"]:
-        self._insert_meta()
+        self.update_meta()
 
         self._update_serial_num()
 
         # 图像处理
         if self.get_images("http") and input("是否尝试下载超链接图片？[Y/n]: ").lower() != "n":
+            # self.unlock_text()
             self.download_img()
+
         # 默认启用 png -> jpg
         self.convert_png2jpg()
 
     def overwrite(self):
         with open(self.file_path, "w", encoding="utf8") as fp:
             fp.writelines(self.get_text())
+        print(f"Markdown文件已保存【{self.file_path}】")
 
-    def _update_categories(self):
-        # 通过相对路径
-        # path_dir = Path(os.path.dirname(self.file_path)).as_posix()
-        path_parts = Path(os.path.dirname(self.file_path)).parts  # tuple
-        path_parts = list(path_parts)
-        if "articles" not in path_parts:
-            self.metadata["categories"] = path_parts
-        else:
-            index = path_parts.index("articles")
-            self.metadata["categories"] = path_parts[index +1:]
-
-    def _remove_old_meta(self):
-        __text_lines = self.get_text()
-        meta_start, meta_end = self.meta_range
-        if meta_start is not None:
-            self.set_text(__text_lines[:meta_start] + __text_lines[meta_end +1:])
-
-    def _insert_meta(self):
-        import datetime
-
+    def _make_meta_line(self):
         def list_as_str(data: list):
             # str(data) -> 单引号，不符合markdown标准
             return "[\"" + "\",\"".join(data) + "\"]" if data else "[]"
+
+        self.metadata["date"] = str(datetime.date.today())
 
         # date数据由于使用eval()反序列化，故必须使用""作为字符串
         str_md_info = f"""<!--
 +++
 title       = "{self.metadata['title']}"
 description = "{self.metadata['description']}"
-date        = "{datetime.date.today()}"
+date        = "{self.metadata['date']}"
 weight      = {self.metadata['weight']}
 tags        = {list_as_str(self.metadata.get('tags'))}
 categories  = {list_as_str(self.metadata.get('categories'))}
 keywords    = {list_as_str(self.metadata.get('keywords'))}
 +++ -->
 """
-        self.insert_text(0, str_md_info)
+        return str_md_info
+
+    def update_meta(self):
+        meta_line = self._make_meta_line()
+        if self.meta_range[0] is not None:
+        # def _remove_old_meta(self):
+            __text_lines = self.get_text()
+            meta_start, meta_end = self.meta_range
+            if meta_start is not None:
+                self.set_text(__text_lines[:meta_start] + __text_lines[meta_end +1:])
+
+        # def _insert_meta(self):
+            self.insert_text(0, meta_line)
+            self.meta_range = [None, None]
+        else:
+            self.modify_text(0, meta_line)
 
     def _update_serial_num(self):
         """ 使用3级序号：1.2.4. xxx """
@@ -155,7 +154,6 @@ def getopt():
 def format_one_doc(fmt, path_file):
     fmt.load_file(path_file)
     fmt.format()
-    fmt.overwrite()
 
 def format_dir(fmt, path_dir):
     list_files = glob.glob(f"{path_dir}/**/*.md", recursive=True)
@@ -191,6 +189,7 @@ if __name__ == "__main__":
             path = path.strip()
             if os.path.exists(path):
                 format_anything(fmt, path)
+                fmt.overwrite()
             else:
                 print(f"Error: File [{path}] NOT found.")
 
