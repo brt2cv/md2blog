@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# @Date    : 2020-05-23
+# @Date    : 2020-05-25
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
 # @Version : 0.1.2
@@ -22,7 +22,7 @@ class PostidNotUnique(Exception):
     """ 获取到postid不唯一，可能是存在同名title的文档 """
 
 class CnblogManager:
-    def __init__(self, path_conf):
+    def __init__(self, path_conf, path_data):
         self.dict_conf = {
             "blog_url": "",
             "blog_id" : "",
@@ -35,7 +35,7 @@ class CnblogManager:
         self.mime = None
 
         self.md_fmt = MarkdownFormatter()
-        self.doc_mgr = DocumentsMgr()
+        self.doc_mgr = DocumentsMgr(path_data)
 
     def load_config(self, path_conf):
         with open(path_conf, "r") as fp:
@@ -80,70 +80,88 @@ class CnblogManager:
         with open("mime.json", "r") as fp:
             self.mime = json.load(fp)
 
-    def _new_blog(self):
+    def _new_blog(self, struct_post):
+        # postid = self.cnblog_server.metaWeblog.newPost(
+        #             self.dict_conf["blog_id"],
+        #             self.dict_conf["username"],
+        #             self.dict_conf["password"],
+        #             struct_post, True)
+        postid = 111111
+        print(f">> 完成blog的上传: [{postid}]")
+        self.doc_mgr.add_doc(self.md_fmt, postid)
+
+    def _repost_blog(self, postid, struct_post):
+        """ 重新发布 """
+        # status = self.cnblog_server.metaWeblog.editPost(
+        #             postid,
+        #             self.dict_conf["username"],
+        #             self.dict_conf["password"],
+        #             struct_post, True)
+        print(f">> 完成blog的更新: [{status}]")
+        self.doc_mgr.modify_doc(self.md_fmt)
+
+    def post_blog(self, path_md, as_article=False):
         md_parser = self.md_fmt
 
         if self.mime is None:
             self._load_mime()
 
+        # 格式化md
+        format_anything(md_parser, path_md)
+
         # 上传图片
-        dict_images = md_parser.get_images("all")
-        list_remove = []
-        for line, url in dict_images.items():
-            if url.startswith("http"):
-                list_remove.append(line)
+        dict_images_relpath = md_parser.get_images("local", force_abspath=False)
+        if dict_images_relpath:
+            dict_images = {}
+            for line_idx, rel_path in dict_images_relpath.items():
+                dict_images[line_idx] = os.path.abspath(rel_path)
 
-        for line in list_remove:
-            del dict_images[line]
+            # 将图像链接地址改写为cnblog_link
+            md_parser.process_images(dict_images, self._upload_img)
 
-        md_parser.process_images(dict_images, self._upload_img)  # 更新上传服务器的URL
-        dict_post = {
+        text_lines = md_parser.get_text()
+        if dict_images_relpath:
+            # 备注原本地图像链接
+            for line, url_local in dict_images_relpath.items():
+                # path_rel = os.path.relpath(url_local, md_parser.file_name)
+                md_parser.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
+
+            # 保存修改url的Markdown
+            md_parser.overwrite()
+
+        if as_article:
+            md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
+        struct_post = {
             "title": md_parser.metadata["title"],
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
-            "description": "".join(md_parser.get_text())
+            "description": "".join(text_lines)
         }
-        postid = self.cnblog_server.metaWeblog.newPost(
-                    self.dict_conf["blog_id"],
-                    self.dict_conf["username"],
-                    self.dict_conf["password"],
-                    dict_post, True)
-
-        print(f">> 完成blog的上传: [{postid}]")
-
-        # 更新本地图像链接，用于修改文档时调用已上传图像
-
-    def _repost_blog(self, postid):
-        """ 重新发布 """
-        postid = self.cnblog_server.metaWeblog.editPost(
-                    postid,
-                    self.dict_conf["username"],
-                    self.dict_conf["password"],
-                    dict_post, True)
-        print(f">> 完成blog的更新: [{postid}]")
-
-    def post_blog(self, path_md):
-        # 格式化md
-        format_anything(self.md_fmt, path_md)
-
-        postid = self.get_postid(self.md_fmt.metadata["title"])
+        postid = self.get_postid(md_parser.metadata["title"])
         if postid:
-            self._repost_blog(postid)
+            self._repost_blog(postid, struct_post)
         else:
-            self._new_blog()
+            self._new_blog(struct_post)
 
-    def download_blog(self, title_or_postid):
+    def download_blog(self, title_or_postid, ignore_img=True):
+        if not ignore_img:
+            raise Exception("尚未开发，敬请期待")
+
         postid = self.get_postid(title_or_postid)
         if not postid:
             logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
 但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。")
             return
 
-        list_data = self.cnblog_server.metaWeblog.getPost(
+        dict_data = self.cnblog_server.metaWeblog.getPost(
                     postid,
                     self.dict_conf["username"],
                     self.dict_conf["password"])
-        blog_data = list_data[0]
-        print(f">> 已下载blog: [{blog_data}]")
+        # print(f">> 已下载blog: [{dict_data}]")
+
+        dir_download = "cnblog_bak"
+        if not os.path.exists(dir_download): os.makedirs(dir_download)
+        with open(f"{dir_download}/{postid}.md", "w", encoding="utf8") as fp:
+            fp.write(dict_data['description'])
 
     def delete_blog(self, postid_or_postid):
         postid = self.get_postid(title_or_postid)
@@ -163,6 +181,9 @@ class CnblogManager:
             logger.error(e)
         else:
             print(f"已删除blog: 【{title}】")
+
+            path_rel = self.doc_mgr.data["postids"]["postid"]
+            self.doc_mgr.remove_doc(path_rel)
 
     def rename_blog(self, postid, path_new_md):
         postid = self.get_postid(title_or_postid)
@@ -214,7 +235,7 @@ def getopt():
 if __name__ == "__main__":
     args = getopt()
 
-    uploader = CnblogManager(".cnblog.json")
+    uploader = CnblogManager(".cnblog.json", "/d/Home/workspace/note2")
 
     # 处理命令行参数
     if args.user:

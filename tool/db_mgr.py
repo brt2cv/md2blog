@@ -1,92 +1,166 @@
 #!/usr/bin/env python3
-# @Date    : 2020-05-23
+# @Date    : 2020-05-25
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
 # @Version : 0.0.1
 
+import os
 import json
-from git import Repo
 
+from doc_parser import MarkdownParser
 
-REPO_ROOT_DIR = ".."
-DB_FILE = REPO_ROOT_DIR + "/files.json"
-
-repo = Repo(REPO_ROOT_DIR)
-if not repo.is_dirty():
-    print("无文件要提交，干净的工作区")
-    exit()
-
-
-def git_status(type_):
-    """ type_:
-        ("untracked", "modified", "added", "deleted", "renamed")
-    """
-    from collections import defaultdict
-
-    dict_status = defaultdict(list)
-
-    str_status = repo.git.execute(["git", "status", "-s"])
-    for line in str_status.splitlines():
-        status, path_file = line.split()
-        dict_status[status].append(path_file)
-
-    map_type2files = {
-        "untracked" : "??",
-        "modified"  : "M",
-        "added"     : "A",
-        "deleted"   : "D",
-        "renamed"   : "R",
-    }
-    return dict_status[map_type2files[type_]]
 
 class DocumentsMgr:
-    def __init__(self):
-        self.dict_conf = {
-                "docs_dir": REPO_ROOT_DIR + "/documents/",
-                "db_file":  REPO_ROOT_DIR + "/doc.json",
-            }
-        self.metadata = {
-            # path_tree: {
-            #     path_doc: {
+    default_conf = ".database.json"
+
+    def __init__(self, repo_dir):
+        self.path_db = os.path.join(repo_dir, self.default_conf)
+
+        # if os.path.exists(path_db):
+        self.load_data()
+
+    @classmethod
+    def template_data(cls, repo_dir):
+        conf_data = {
+            "repo_dir" : repo_dir,
+            "dir_随笔": repo_dir + "essay",
+            "dir_文章": repo_dir + "artiles",
+
+            "structure": {
+            #     "path_doc": {
+            #         "title" : ""
             #         "weight": 0,
             #         "postid": 1234xxx,
-            #         "tags"  : []
-            #     }
-            # }
+            #         "tags"  : [],
+            #         "date"  : "2020-05-25"
+            #     },
+            #     ...
+            },
+            # 以下为冗余数据，空间换时间
+            "titles": {
+            #     "artile": "path_doc",
+            #     ...
+            },
+            "tags": {
+            #     "tag_1": ["path_doc"],
+            #     ...
+            },
+            "dates": {
+            #     "date": ["path_doc", ...],
+            #     ...
+            },
+            "postids": {
+            #     post_id: "path_doc",
+            #     ...
+            }
+        }
+        path_data = os.path.join(repo_dir, cls.default_conf)
+        with open(path_data, "w", encoding="utf8") as fp:
+            json.dump(conf_data, fp)
+
+    def __del__(self):
+        self.save_data()
+
+    def load_data(self, path_conf):
+        if path_conf:
+            self.path_data = path_conf
+
+        with open(self.path_data, "r") as fp:
+            self.data = json.load(fp)
+
+    def save_data(self, path_save=None):
+        if path_save:
+            self.path_data = path_save
+
+        with open(self.path_data, "w") as fp:
+            json.dump(self.data, path_save)
+
+    def rebuild_tags(self):
+        """ 通过structure重新计算tags """
+
+    def rebuild_titeles(self):
+        """ 通过structure重新计算titles """
+
+    def add_doc(self, md_parser, postid):
+        path_rel = os.path.relpath(os.path.abspath(path_doc), self.data["repo_dir"])
+        assert path_rel not in self.data["structure"], "文件已存在，勿重复添加"
+        doc_info = {
+            "title" : md_parser.metadata["title"],
+            "weight": md_parser.metadata["weight"],
+            "postid": postid,
+            "tags"  : md_parser.metadata["tags"],
+            "date"  : md_parser.metadata["date"],
         }
 
-    def load_config(self, path_conf):
-        with open(path_conf, "r") as fp:
-            dict_conf = json.load(fp)
+        # update related
+        existed = self.data["titles"].get(doc_info["title"])
+        assert doc_info["title"] not in self.data["titles"], f"Title重复，冲突文件：{existed}"
+        assert doc_info["postid"] not in self.data["postids"], f"PostID重复: {doc_info['postid']}"
 
-        for key, value in dict_conf.items():
-            self.dict_conf[key] = value
+        self.data["titles"][doc_info["title"]] = path_rel
+        for tag in doc_info["tags"]:
+            self.data["tags"][tag].append(path_rel)
+        self.data["postids"][doc_info["postid"]] = path_rel
+        self.data["dates"][doc_info["date"]].append(path_rel)
 
-    def save_config(self, path_save):
-        with open(path_conf, "w") as fp:
-            json.dump(self.dict_conf, path_save)
+        self.data["structure"][path_rel] = doc_info
 
-    def add_doc(self, path_doc):
-        pass
+    def remove_doc(self, path_rel):
+        doc_info = self.data["structure"][path_rel]
+        del self.data["titles"][doc_info["title"]]
+        for tag in doc_info["tags"]:
+            self.data["tags"][tag].remove(path_rel)
+        self.data["dates"][doc_info["date"]].remove(path_rel)
+        del self.data["postids"][doc_info["postid"]]
+        del self.data["structure"][path_rel]
+
+    def modify_doc(self, md_parser):
+        path_rel = os.path.relpath(os.path.abspath(path_doc), self.data["repo_dir"])
+        old_info = self.data["structure"][path_rel]
+
+        new_info = {
+            "title" : md_parser.metadata["title"],
+            "weight": md_parser.metadata["weight"],
+            "postid": postid,
+            "tags"  : md_parser.metadata["tags"],
+            "date"  : md_parser.metadata["date"],
+        }
+
+        if old_info["title"] != new_info["title"]:
+            del self.data["titles"][old_info["title"]]
+            self.data["titles"][new_info["title"]] = path_rel
+
+        if set(old_info["tags"]) != set(new_info["tags"]):
+            for tag in set(old_info["tags"]) - set(new_info["tags"]):
+                self.data["tags"].remove(path_rel)
+            for tag in set(new_info["tags"]) - set(old_info["tags"]):
+                self.data["tags"][tag].append(path_rel)
+
+        self.data["dates"][old_info["date"]].remove(path_rel)
+        self.data["dates"][new_info["date"]].append(path_rel)
+
+        self.data["structure"][path_rel] = new_info
+
+    def move_doc(self, path_src, path_dst):
+        raise Exception("尚未开发，敬请期待")
 
     def get_postid(self, doc_title):
         """ return str(postid) or None if not exist """
-        return None
+        path_rel = self.data["titles"].get(doc_title)
+        if path_rel:
+            return self.data["structure"][path_rel].get(postid)
 
     def exist_doc(self, doc_title):
         return self.get_postid(doc_title)
 
-    def modify_doc(self, path_doc):
-        pass
-
-    def move_doc(self, path_doc):
-        pass
+    def sort_dir(self, path_dir, method="weight"):
+        """ 排序目录下文件 """
 
     def list_tags(self):
-        pass
+        return self.data["tags"]
 
     def get_docs_of_tag(self, tag_name):
-        pass
+        return self.data["tags"][tag_name]
 
     def get_docs_of_category(self, category_name):
         pass
@@ -97,10 +171,13 @@ class DocumentsMgr:
         """
         pass
 
-
 if __name__ == "__main__":
-    list_untracked = repo.untracked_files  # 新建项
-    list_modified = get_status("modified")  # 修改项
+    def getopt():
+        import argparse
 
-    mgr = DocumentsMgr()
-    # mgr.load_config()
+        parser = argparse.ArgumentParser("db_mgr", description="仅用于生成db初始化文件")
+        parser.add_argument("repo_dir", action="store", help="文档Git项目的所在目录")
+        return parser.parse_args()
+
+    args = getopt()
+    DocumentsMgr.template_data(os.path.realpath(args.repo_dir))

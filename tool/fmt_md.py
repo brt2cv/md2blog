@@ -5,6 +5,7 @@
 # @Version : 0.0.2
 
 import os
+from pathlib import Path
 import re
 import glob
 from collections import defaultdict
@@ -30,7 +31,7 @@ class MarkdownFormatter(MarkdownParser):
         self._update_serial_num()
 
         # 图像处理
-        if input("是否尝试下载超链接图片？[Y/n]: ").lower() != "n":
+        if self.get_images("http") and input("是否尝试下载超链接图片？[Y/n]: ").lower() != "n":
             self.download_img()
         # 默认启用 png -> jpg
         self.convert_png2jpg()
@@ -41,9 +42,14 @@ class MarkdownFormatter(MarkdownParser):
 
     def _update_categories(self):
         # 通过相对路径
-        path_dir = os.path.dirname(self.file_path)
-        path_rel = os.path.relpath(path_dir, "../documents")  # ??
-        self.metadata["categories"] = path_rel.split("/")
+        # path_dir = Path(os.path.dirname(self.file_path)).as_posix()
+        path_parts = Path(os.path.dirname(self.file_path)).parts  # tuple
+        path_parts = list(path_parts)
+        if "articles" not in path_parts:
+            self.metadata["categories"] = path_parts
+        else:
+            index = path_parts.index("articles")
+            self.metadata["categories"] = path_parts[index +1:]
 
     def _remove_old_meta(self):
         __text_lines = self.get_text()
@@ -111,7 +117,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
     def download_img(self):
         from download_img_link import download_src
 
-        dict_images = self.get_images("link")
+        dict_images = self.get_images("http")
         # 生成图像目录
         dir_img, _ = os.path.splitext(self.file_path)
         if not os.path.exists(dir_img):
@@ -149,7 +155,6 @@ def getopt():
 def format_one_doc(fmt, path_file):
     fmt.load_file(path_file)
     fmt.format()
-
     fmt.overwrite()
 
 def format_dir(fmt, path_dir):

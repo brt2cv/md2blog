@@ -29,7 +29,8 @@ class MarkdownParser:
     pattern_images = {
         "all":  re.compile(r"!\[\]\((.*)\)"),
         "png":  re.compile(r"!\[\]\((.*\.png)\)"),
-        "link": re.compile(r"!\[\]\((http.*?)\)"),
+        "jpg":  re.compile(r"!\[\]\((.*\.jpg)\)"),
+        "http": re.compile(r"!\[\]\((http.*?)\)"),
     }
 
     def _clear_metadata(self):
@@ -125,11 +126,16 @@ class MarkdownParser:
             elif line.startswith("[TOC]"):
                 self.check_list["find_TOC"] = True
 
-    def get_images(self, type_="all"):
+    def get_images(self, type_="all", force_abspath=True, ignore_myblog=True):
         """ 临时有效，会加锁文本数据
-            type_ in ("all", "png", "link")
+            type_ in ("all", "local", "png", "jpg", "http")
         """
         self.lock_text()
+        if type_ == "local":
+            is_type_local = True
+            type_ = "all"
+        else:
+            is_type_local = False
 
         def match_regex(pattern, text):
             """ 适用于一个group的正则式 """
@@ -140,8 +146,12 @@ class MarkdownParser:
         for index, line in enumerate(self.get_text()):
             url_img = match_regex(self.pattern_images[type_], line)
             if url_img:
-                # 相对路径转换
-                if not url_img.startswith("http") and not os.path.isabs(url_img):
+                if url_img.startswith("http"):
+                    if is_type_local:
+                        continue
+                    elif ignore_myblog and line.find("<!--"):
+                        continue
+                elif force_abspath and not os.path.isabs(url_img):  # 相对路径转换
                     url_img = os.path.join(os.path.dirname(self.file_path), url_img)
                 dict_images[index] = url_img
         return dict_images
