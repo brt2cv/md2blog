@@ -1,5 +1,4 @@
-tool/cnblog/
-tool/.cnblog.json
+.cnblog.json
 
 **/ui/*[!*.ui]
 **/.vscode/*[!demo/]
