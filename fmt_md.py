@@ -129,8 +129,13 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
     def convert_png2jpg(self):
         from png2jpg import png2smaller  # png2jpg
 
+        path_rel_start = os.path.dirname(self.file_path)
+        def png2jpg_and_return_relpath(path_png):
+            path_jpg = png2smaller(path_png, 85)
+            return os.path.relpath(path_jpg, path_rel_start)
+
         dict_images = self.get_images("png")
-        self.process_images(dict_images, lambda url: png2smaller(url, 85))
+        self.process_images(dict_images, png2jpg_and_return_relpath)
         # 删除原png文件
         # for path_img in dict_images.values():
         #     os.remove(path_img)

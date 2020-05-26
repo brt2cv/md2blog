@@ -45,6 +45,7 @@ class CnblogManager:
         self.md_fmt = MarkdownFormatter()
 
         repo_dir = self.dict_conf["repo_dir"]
+        assert os.path.isabs(repo_dir), "[repo_dir]必须为绝对路径"
         assert repo_dir, "请先为配置文件指定操作的repo目录..."
         self.db_mgr = DocumentsMgr(repo_dir)
 
@@ -122,21 +123,22 @@ class CnblogManager:
         self.db_mgr.modify_doc(self.md_fmt)
 
     def _is_article(self, path_md):
-        return path_md.find(os.path.abspath(self.db_mgr.data["dir_article"])) >= 0
+        abspath_article = os.path.join(self.db_mgr.repo_dir, self.db_mgr.data["dir_article"])
+        return path_md.find(abspath_article) >= 0
 
     def _update_categories(self, path_md):
         assert os.path.isabs(path_md)
-        assert path_md.find(os.path.abspath(self.db_mgr.data["dir_repo"])) == 0
+        assert path_md.find(os.path.abspath(self.db_mgr.repo_dir)) == 0
 
-        essay_dirname = os.path.basename(self.db_mgr.data["dir_essay"])
-        article_dirname = os.path.basename(self.db_mgr.data["dir_article"])
+        essay_dirname = self.db_mgr.data["dir_essay"]
+        article_dirname = self.db_mgr.data["dir_article"]
 
         # 通过相对路径
         def get_categories(key_dirname):
             # path_dir = Path(os.path.dirname(path_md)).as_posix()
             path_parts = Path(os.path.dirname(path_md)).parts  # tuple
             assert key_dirname in path_parts, f"Error: {key_dirname} not in {path_parts}"
-            index = path_parts.index("articles")
+            index = path_parts.index(key_dirname)
             return list(path_parts[index +1:])
 
         categories = get_categories(article_dirname if self._is_article(path_md) else essay_dirname)

@@ -165,3 +165,13 @@ class MarkdownParser:
             if url_new:
                 num_space = self.get_text()[line_idx].find("!")
                 self.modify_text(line_idx, " "*num_space + f"![]({url_new})")
+
+
+# if __name__ == "__main__":
+#     import pathlib
+#
+#     parser = MarkdownParser()
+#     path_md = pathlib.Path(r"D:\Home\workspace\note\programming\test\摄影入门.md")
+#     parser.load_file(path_md)
+#     dict_img = parser.get_images("local", force_abspath=False)
+#     print(dict_img)

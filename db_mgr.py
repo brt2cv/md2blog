@@ -14,18 +14,21 @@ class DocumentsMgr:
     default_conf = ".database.json"
 
     def __init__(self, repo_dir):
-        self.path_data = os.path.join(repo_dir, self.default_conf)
-        assert os.path.exists(self.path_data), f"请手动创建配置文件:【{self.path_data}】"
+        self.repo_dir = repo_dir
+        path_database = self.get_database()
+        assert os.path.exists(path_database), f"请手动创建配置文件:【{path_database}】"
         self.load_data()
         # 每次运行程序前，备份之前的database文件
         self.backup_data()
 
+    def get_database(self):
+        return os.path.join(self.repo_dir, self.default_conf)
+
     @classmethod
     def template_data(cls, repo_dir):
         conf_data = {
-            "dir_repo" : repo_dir,
-            "dir_essay": os.path.join(repo_dir, "programming"),
-            "dir_article": os.path.join(repo_dir, "articles"),
+            "dir_essay": "programming",
+            "dir_article": "articles",
 
             "structure": {
             #     "path_doc": {
@@ -104,17 +107,17 @@ class DocumentsMgr:
             self.save_interface()
 
     def load_data(self, path_conf=None):
-        if path_conf:
-            self.path_data = path_conf
+        if not path_conf:
+            path_conf = self.get_database()
 
-        with open(self.path_data, "r", encoding="utf8") as fp:
+        with open(path_conf, "r", encoding="utf8") as fp:
             self.data = json.load(fp)
 
     def save_data(self, path_save=None):
-        if path_save:
-            self.path_data = path_save
+        if not path_save:
+            path_save = self.get_database()
 
-        with open(self.path_data, "w+", encoding="utf8") as fp:
+        with open(path_save, "w+", encoding="utf8") as fp:
             json.dump(self.data, fp)
 
     def backup_data(self):
@@ -127,8 +130,7 @@ class DocumentsMgr:
         """ 通过structure重新计算titles """
 
     def add_doc(self, md_parser, postid):
-        path_rel = os.path.relpath(os.path.abspath(md_parser.file_path),
-                                   self.data["dir_repo"])
+        path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
         assert path_rel not in self.data["structure"], "文件已存在，勿重复添加"
         doc_info = {
             "title" : md_parser.metadata["title"],
@@ -169,8 +171,7 @@ class DocumentsMgr:
         self.save_data()
 
     def modify_doc(self, md_parser):
-        path_rel = os.path.relpath(os.path.abspath(md_parser.file_path),
-                                   self.data["dir_repo"])
+        path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
         old_info = self.data["structure"][path_rel]
 
         new_info = {
