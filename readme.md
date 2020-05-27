@@ -58,5 +58,10 @@
 
 + git管理
 
-    当增加提交时，通过git-api检测修改的文档，对更新文档重新检测format和规范属性。
+    可以直接使用git来指示upload_cnblog.py对文档的上传管理：
 
+    1. 对于需要上传或更新的文档，使用 `git add` 添加到repo中
+    2. 执行 `python3 upload_cnblog.py -a` 自动查询当前repo的变化
+    3. upload_cnblog格式化Markdown文件，上传至cnblog，并改写本地数据库表
+    4. 自动更新当前repo——由于added文档格式化，需要重新add。同理图像目录也需要重新添加仓库，以及 `.database.json` 数据库
+    5. 实现对 `git commit` 的提交
