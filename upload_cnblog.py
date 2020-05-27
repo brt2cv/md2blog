@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2020-05-25
+# @Date    : 2020-05-27
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.2
+# @Version : 0.1.3
 
 
 def getopt():
@@ -19,7 +19,7 @@ def getopt():
 
 if __name__ == "__main__":
     args = getopt()
-    path_cnblog_account=".cnblog.json"
+    path_cnblog_account = ".cnblog.json"
 
     # 处理命令行参数
     if args.repo:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         with open(path_cnblog_account, "w", encoding="utf8") as fp:
             # fp.seek(0)
             # fp.truncate()
-            json.dump(dict_conf, fp)
+            json.dump(dict_conf, fp, indent=2)
         exit()
 
     from cnblog_mgr import CnblogManager
