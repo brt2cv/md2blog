@@ -33,6 +33,9 @@ class MarkdownParser:
         "http": re.compile(r"!\[\]\((http.*?)\)"),
     }
 
+    def __init__(self):
+        self.ignore_websites = []
+
     def _clear_metadata(self):
         self.file_path = ""
         self.__text_lines = []
@@ -48,9 +51,12 @@ class MarkdownParser:
         }
         self.check_list = {
             "index_H1": None,
-            "find_TOC": False,
             "index_H2": None,
+            "find_TOC": False,
         }
+
+    def set_ignore_websites(self, list_ignore):
+        self.ignore_websites = list_ignore
 
     def get_text(self):
         return self.__text_lines
@@ -126,10 +132,15 @@ class MarkdownParser:
             elif line.startswith("[TOC]"):
                 self.check_list["find_TOC"] = True
 
-    def get_images(self, type_="all", force_abspath=True, ignore_myblog=True):
+    def get_images(self, type_="all", force_abspath=True, ignore_websites=None):
         """ 临时有效，会加锁文本数据
             type_ in ("all", "local", "png", "jpg", "http")
+            对于个人博客的地址前缀，不再重复下载图像
+            https://img2020.cnblogs.com/blog/2039866/...
         """
+        if ignore_websites is None:
+            ignore_websites = []
+
         self.lock_text()
         if type_ == "local":
             is_type_local = True
@@ -139,7 +150,7 @@ class MarkdownParser:
 
         def match_regex(pattern, text):
             """ 适用于一个group的正则式 """
-            re_match = re.search(pattern, text)
+            re_match = re.match(pattern, text.strip())
             return re_match.group(1) if re_match else None
 
         dict_images = {}  # line: url
@@ -149,8 +160,10 @@ class MarkdownParser:
                 if url_img.startswith("http"):
                     if is_type_local:
                         continue
-                    elif ignore_myblog and line.find("<!--"):
-                        continue
+                    elif line.find("<!--"):
+                        for http_prefix in ignore_websites + self.ignore_websites:
+                            if url_img.startswith(http_prefix):
+                                continue
                 elif force_abspath and not os.path.isabs(url_img):  # 相对路径转换
                     url_img = os.path.join(os.path.dirname(self.file_path), url_img)
                 dict_images[index] = url_img

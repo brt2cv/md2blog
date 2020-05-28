@@ -31,18 +31,21 @@ class PostidNotUnique(Exception):
 class CnblogManager:
     def __init__(self, path_cnblog_account):
         self.dict_conf = {
-            "blog_url": "",
-            "blog_id" : "",
-            "app_key" : "",
-            "username": "",
-            "password": "",
-            "repo_dir": ""
+            # "blog_url": "",
+            # "blog_id" : "",
+            # "app_key" : "",
+            # "user_id" : "",
+            # "username": "",
+            # "password": "",
+            # "repo_dir": ""
         }
         self.load_cnblog_conf(path_cnblog_account)
         self.cnblog_server = xmlrpc.client.ServerProxy(self.dict_conf["blog_url"])
         self.mime = None
 
         self.md_fmt = MarkdownFormatter()
+        self.md_fmt.set_ignore_websites(["https://img2020.cnblogs.com/blog/" +
+                                        str(self.dict_conf["user_id"])])
 
         repo_dir = self.dict_conf["repo_dir"]
         assert os.path.isabs(repo_dir), "[repo_dir]必须为绝对路径"
@@ -69,10 +72,16 @@ class CnblogManager:
     def get_user_info(self):
         """ return a list of user-info """
         user_info = self.cnblog_server.blogger.getUsersBlogs(
-                    self.dict_conf["blog_url"],
-                    self.dict_conf["username"],
-                    self.dict_conf["password"])
+                            self.dict_conf["blog_url"],
+                            self.dict_conf["username"],
+                            self.dict_conf["password"])
         return user_info
+
+    def pull_img(self, path_md):
+        self.md_fmt.load_file(path_md)
+
+        if self.md_fmt.get_images("http"):
+            self.md_fmt.download_img()
 
     def _upload_img(self, path_img):
         if TESTING:

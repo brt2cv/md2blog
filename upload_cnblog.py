@@ -14,6 +14,7 @@ def getopt():
     parser.add_argument("-g", "--get", action="store_true", help="获取近期上传的列表")
     parser.add_argument("-d", "--delete", action="store", help="删除博客文档")
     parser.add_argument("-s", "--save", action="store", help="下载博客文档")
+    parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")
     parser.add_argument("-a", "--auto", action="store_true", help="使用git自动上传cnblog")
     return parser.parse_args()
 
@@ -98,7 +99,8 @@ if __name__ == "__main__":
     if args.auto:
         auto_upload(uploader)
     elif args.user:
-        uploader.get_user_info()
+        info = uploader.get_user_info()
+        print(info)
     elif args.get:
         uploader.get_recent_post()
     elif args.delete:
@@ -108,9 +110,14 @@ if __name__ == "__main__":
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip()
+            path = path.strip().strip('"')
             try:
-                uploader.post_blog(path)
+                if args.pull_img:
+                    uploader.pull_img(path)
+                    uploader.md_fmt.convert_png2jpg()
+                    uploader.md_fmt.overwrite()
+                else:
+                    uploader.post_blog(path)
             except FileNotFoundError as e:
                 print(e)
 

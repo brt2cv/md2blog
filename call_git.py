@@ -28,8 +28,8 @@ def filter_status(stdout_lines, type_):
     # dict_status = defaultdict(list)
     list_files = []
     for line in stdout_lines:
-        state, path_file = line.split()
-        # path_file = path_file.strip('"')  # 去除对路径的双引号
+        state, path_file = line.split(maxsplit=1)
+        path_file = path_file.strip('"')  # 去除对路径的双引号
         checking = {
             "untracked" : "??" == state,
             "modified"  : "M" == state[-1],  # MM, AM
@@ -50,9 +50,12 @@ def git_commit(repo_dir, message):
 
 def git_add(list_path_add):
     cwd = os.path.abspath(os.path.curdir)
-    os.chdir(list_path_add[0])
-    run_cmd("git add " + " ".join(list_path_add))
-    os.chdir(cmd)
+
+    repo_file = list_path_add[0]
+    repo_sub_dir = repo_file if os.path.isdir(repo_file) else os.path.dirname(repo_file)
+    os.chdir(repo_sub_dir)
+    run_cmd('git add "' + '" "'.join(list_path_add) + '"')
+    os.chdir(cwd)
 
 
 # if __name__ == "__main__":
