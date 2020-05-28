@@ -27,10 +27,10 @@ class MarkdownParser:
         2. title = "xxx"... 定义元数据的hugo格式
     """
     pattern_images = {
-        "all":  re.compile(r"!\[\]\((.*)\)"),
-        "png":  re.compile(r"!\[\]\((.*\.png)\)"),
-        "jpg":  re.compile(r"!\[\]\((.*\.jpg)\)"),
-        "http": re.compile(r"!\[\]\((http.*?)\)"),
+        "all":  re.compile(r"!\[.*\]\((.*)\)"),
+        "png":  re.compile(r"!\[.*\]\((.*\.png)\)"),
+        "jpg":  re.compile(r"!\[.*\]\((.*\.jpg)\)"),
+        "http": re.compile(r"!\[.*\]\((http.*?)\)"),
     }
 
     def __init__(self):
