@@ -46,7 +46,10 @@ def git_commit(repo_dir, message):
     if not message:
         from datetime import datetime
         message = datetime.now().strftime('%a, %b %d %H:%M')
+    cwd = os.path.abspath(os.path.curdir)
+    os.chdir(repo_dir)
     run_cmd(f'git commit -m "{message}"')
+    os.chdir(cwd)
 
 def git_add(list_path_add):
     cwd = os.path.abspath(os.path.curdir)

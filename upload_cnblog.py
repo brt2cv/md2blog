@@ -72,7 +72,10 @@ def auto_upload(uploader):
             map_actions[action](abspath_file)
 
             # 将文件更新到记录列表
-            repo_files_to_update.extend([path_file, path_file[:-3] ])
+            repo_files_to_update.append(abspath_file)
+            dir_res = abspath_file[:-3]  # 去除.md后缀
+            if os.path.exists(dir_res):
+                repo_files_to_update.append(dir_res)
 
     for action in map_actions:
         execute_upload(action)
