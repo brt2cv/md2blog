@@ -65,3 +65,7 @@
     3. upload_cnblog格式化Markdown文件，上传至cnblog，并改写本地数据库表
     4. 自动更新当前repo——由于added文档格式化，需要重新add。同理图像目录也需要重新添加仓库，以及 `.database.json` 数据库
     5. 实现对 `git commit` 的提交
+
+## Buglist
+
++ H2超过10之后，会发成显示重复（例如：11. 11. title）。但本地文件却并没有问题，只是cnblog中的md内容发生重复。目前不确定该差别是否为cnblog平台问题（毕竟程序对1-9都显示正常)

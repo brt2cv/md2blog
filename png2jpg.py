@@ -7,6 +7,7 @@
 import os
 from PIL import Image
 
+
 def _callBash():
     """
     # 安装
@@ -29,26 +30,22 @@ def png2jpg(path_png, quality):
     im_rgb.save(path_new, quality=quality)
     return path_new
 
-
-IMG_SMALLER_PREFIX = "keepng_"
-KEEP_SIZE_WEIGHT = 0.75  # 除非显著压缩，否则保留原图像
-
-def png2smaller(path_png, quality):
+def png2smaller(path_png, quality, least_ratio=0.75, new_file_prefix="keepng_"):
     """ png2jpg()未考虑转换结果，_ex()则对比转换结果，
         如果转换后文件变大了，则保留原png.
         为了避免下次重复转换png，文件名增加前缀 keepng_
     """
-    if os.path.basename(path_png).startswith(IMG_SMALLER_PREFIX):
+    if os.path.basename(path_png).startswith(new_file_prefix):
         return
 
     path_new = png2jpg(path_png, quality)
-    # 比较size
-    if os.path.getsize(path_new) < os.path.getsize(path_png) * KEEP_SIZE_WEIGHT:
+    # 比较size: 除非显著压缩，否则保留原图像
+    if os.path.getsize(path_new) < os.path.getsize(path_png) * least_ratio:
         os.remove(path_png)
     else:
         os.remove(path_new)
         path_new = os.path.join(os.path.dirname(path_png),
-                   IMG_SMALLER_PREFIX + os.path.basename(path_png))
+                   new_file_prefix + os.path.basename(path_png))
         os.rename(path_png, path_new)
     return path_new
 
@@ -72,6 +69,22 @@ def jpg_mask_to_png(jpgPath, maskPath):
 
     im_jpg.putalpha(im_mask)
     im_jpg.save(jpgPath + ".png")
+
+def resize(path_src, ratio=0.5, output_shape=None, min_size=0, antialias=True):
+    if os.path.getsize(path_src) < min_size:
+        return
+
+    im = Image.open(path_src)
+    # 开启抗锯齿，耗时增加8倍左右
+    resample = Image.ANTIALIAS if antialias else Image.NEAREST
+    # 注意：pillow.size 与 ndarray.size 顺序不同
+    if output_shape:
+        w, h = output_shape
+    else:
+        list_ = [int(i*ratio) for i in im.size]
+        w, h = list_
+    im_new = im.resize((w, h), resample)
+    im_new.save(path_src, "JPEG")
 
 
 #####################################################################
