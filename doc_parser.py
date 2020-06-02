@@ -31,6 +31,7 @@ class MarkdownParser:
         "png":  re.compile(r"!\[.*\]\((.*\.png)\)"),
         "jpg":  re.compile(r"!\[.*\]\((.*\.jpg)\)"),
         "http": re.compile(r"!\[.*\]\((http.*?)\)"),
+        "backup": re.compile(r"!\[.*\]\(.*\)\s*<!-- (.*) -->")
     }
 
     def __init__(self):
@@ -134,7 +135,7 @@ class MarkdownParser:
 
     def get_images(self, type_="all", force_abspath=True, ignore_websites=None):
         """ 临时有效，会加锁文本数据
-            type_ in ("all", "local", "png", "jpg", "http")
+            type_ in ("all", "local", "png", "jpg", "http", "backup")
             对于个人博客的地址前缀，不再重复下载图像
             https://img2020.cnblogs.com/blog/2039866/...
         """

@@ -11,6 +11,7 @@ import glob
 from collections import defaultdict
 
 from doc_parser import MarkdownParser, NullMarkdownFile
+from png2jpg import png2smaller, resize
 
 
 class MarkdownFormatter(MarkdownParser):
@@ -35,6 +36,12 @@ class MarkdownFormatter(MarkdownParser):
 
         # 默认启用 png -> jpg
         self.convert_png2jpg()
+
+        # 对于高分辨率图像进行压缩
+        self.resize_high_resolution()
+
+        # 判断下载图像的size，执行resize或压缩
+        self.compress_bigimg()
 
     def overwrite(self):
         with open(self.file_path, "w", encoding="utf8") as fp:
@@ -123,12 +130,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
             os.makedirs(dir_img)
         self.process_images(dict_images, lambda url: download_src(url, dir_img))
 
-        # 判断下载图像的size，执行resize或压缩
-        self.compress_bigimg()
-
     def convert_png2jpg(self):
-        from png2jpg import png2smaller  # png2jpg
-
         path_rel_start = os.path.dirname(self.file_path)
         def png2jpg_and_return_relpath(path_png):
             path_jpg = png2smaller(path_png, 85)
@@ -146,6 +148,12 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
     def compress_bigimg(self):
         pass
 
+    def resize_high_resolution(self, save_as_jpg=True):
+        dict_images_png = self.get_images("png")
+        dict_images_jpg = self.get_images("jpg")
+        callback = lambda url: resize(url, ratio=0.6, min_size=10240,
+                                      max_shape=[888,888], save_as_jpg=save_as_jpg)
+        self.process_images({**dict_images_png, **dict_images_jpg}, callback)
 
 #####################################################################
 
@@ -191,7 +199,7 @@ if __name__ == "__main__":
     else:
         path = input("\n请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip()
+            path = path.strip().strip('"')
             if os.path.exists(path):
                 format_anything(fmt, path)
                 fmt.overwrite()

@@ -49,6 +49,7 @@
     ".fif": "application/fractals",
     ".gtar": "application/x-gtar",
     ".gif": "image/gif",
+    ".webp": "image/webp",
     ".gz": "application/x-gzip",
     ".hta": "application/hta",
     ".htc": "text/x-component",

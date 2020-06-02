@@ -171,29 +171,32 @@ class CnblogManager:
             assert not dict_images_relpath, f"Markdown文档引用的图像未存储在同名文件夹下: {dict_images_relpath}"
             return False
 
+        # 删除未被引用的（多余）图像
         list_dir = os.listdir(dir_img)
-        if not dict_images_relpath:
+        dict_images_backup = md_parser.get_images("backup", force_abspath=False)
+        dict_images_local = {**dict_images_relpath, **dict_images_backup}
+        if not dict_images_local:
             md_parser.unlock_text()
-            logger.warning(f"Markdown文档并未引用图像，同名dir内容如下: {list_dir}")
+            logger.warning(f"Markdown文档并未引用本地图像，同名dir内容如下: {list_dir}")
             if input("是否清除同名文件夹？ [Y/n]: ").lower() != "n":
                 shutil.rmtree(dir_img)
                 logger.warning(f"已清除未引用文件夹:【{dir_img}】")
             return False
 
-        # 删除未被引用的（多余）图像
-        set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_relpath.values()}
+        set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_local.values()}
         str_redundant = '\n'.join(set_redundant)
         if set_redundant and input(f"""################ 是否删除多余图片文件：
 {str_redundant}
 ################ [Y/n]:""").lower() != "n":
             for file in set_redundant:
-                os.remove(file)
+                os.remove(os.path.join(dir_img, file))
 
         # 将图像链接地址改写为cnblog_link
         dict_images = {}
+        dir_md = os.path.dirname(path_md)
         # if dict_images_relpath:
         for line_idx, rel_path in dict_images_relpath.items():
-            dict_images[line_idx] = os.path.join(os.path.dirname(path_md), rel_path)
+            dict_images[line_idx] = os.path.join(dir_md, rel_path)
         md_parser.process_images(dict_images, self._upload_img)
 
         # 备注原本地图像链接

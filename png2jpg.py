@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # @Date    : 2020-05-23
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
@@ -53,8 +53,8 @@ def png_to_jpg_mask(pngPath, quality):
     im = Image.open(pngPath)
     r, g, b, a = im.convert(mode="RGBA").split()
 
-    name, ext = os.path.splitext(pngPath)
-    jpgPath = name + ".jpg"
+    name, _ = os.path.splitext(pngPath)
+    # jpgPath = name + ".jpg"
     maskPath = name + ".mask.jpg"
 
     a.convert(mode="L")
@@ -70,22 +70,42 @@ def jpg_mask_to_png(jpgPath, maskPath):
     im_jpg.putalpha(im_mask)
     im_jpg.save(jpgPath + ".png")
 
-def resize(path_src, ratio=0.5, output_shape=None, min_size=0, antialias=True):
+def resize(path_src, ratio=0.5, output_shape=None, min_size=0, max_shape=None,
+           antialias=True, save_as_jpg=True):
+    """ output_shape: list(w, h)
+        min_size: 忽略存储空间小于此数值的小图片
+        max_shape: 若为None，则直接缩放一次
+                   否则递归压缩尺寸高于此数值的大图片, type: list(w, h)
+    """
     if os.path.getsize(path_src) < min_size:
         return
 
-    im = Image.open(path_src)
     # 开启抗锯齿，耗时增加8倍左右
     resample = Image.ANTIALIAS if antialias else Image.NEAREST
-    # 注意：pillow.size 与 ndarray.size 顺序不同
+
+    im = Image.open(path_src)
+
     if output_shape:
         w, h = output_shape
-    else:
+        im_new = im.resize((w, h), resample)
+    elif max_shape is None:  # 执行一次缩放
+        # 注意：pillow.size 与 ndarray.size 顺序不同
         list_ = [int(i*ratio) for i in im.size]
-        w, h = list_
-    im_new = im.resize((w, h), resample)
-    im_new.save(path_src, "JPEG")
+        im_new = im.resize(list_, resample)
+    else:  # 递归缩减
+        while True:
+            w, h = im.size
+            if w < max_shape[0] and h < max_shape[1]:
+                break
+            w, h = [int(i*ratio) for i in im.size]
+            im = im.resize((w, h), resample)
 
+        im_new = im
+
+    if save_as_jpg:
+        im_new.save(path_src, "JPEG")
+    else:
+        im_new.save(path_src)
 
 #####################################################################
 
@@ -106,9 +126,10 @@ if __name__ == "__main__":
     else:
         path = input("\n请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip()
+            path = path.strip().strip('"')
             if os.path.exists(path):
-                png2jpg(path, args.quality)
+                # png2jpg(path, args.quality)
+                resize(path, ratio=0.6, min_size=10240, max_shape=[888,888])
             else:
                 print(f"Error: File [{path}] NOT found.")
 
