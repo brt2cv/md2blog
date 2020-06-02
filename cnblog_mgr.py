@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 import xmlrpc.client
 
-from fmt_md import MarkdownFormatter, format_anything
+from fmt_md import MarkdownFormatter, format_one_doc
 from db_mgr import DocumentsMgr
 
 try:
@@ -211,15 +211,13 @@ class CnblogManager:
             self._load_mime()
 
         # md_parser读取文档，并初步格式化
-        format_anything(md_parser, path_md)
-
+        format_one_doc(md_parser, path_md)
         # 图片的处理
-        images_updated = self._rebuild_images(path_md)
+        self._rebuild_images(path_md)
         # 更新category
-        category_updated = self._update_categories(path_md)
-        if images_updated or category_updated:
-            # 保存修改url的Markdown
-            md_parser.overwrite()
+        self._update_categories(path_md)
+        # 保存修改url的Markdown
+        md_parser.overwrite()
 
         if self._is_article(path_md):
             md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
