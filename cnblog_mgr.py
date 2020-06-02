@@ -5,6 +5,7 @@
 # @Version : 0.1.2
 
 import os
+import shutil
 from pathlib import Path
 import json
 import xmlrpc.client
@@ -158,6 +159,51 @@ class CnblogManager:
         else:
             return False  # 无需更新
 
+    def _rebuild_images(self, path_md):
+        dir_img = path_md[:-3]  # 同名文件夹
+        has_dir = os.path.exists(dir_img)
+
+        md_parser = self.md_fmt
+
+        # 上传图片
+        dict_images_relpath = md_parser.get_images("local", force_abspath=False)
+        if not has_dir:
+            assert not dict_images_relpath, f"Markdown文档引用的图像未存储在同名文件夹下: {dict_images_relpath}"
+            return False
+
+        list_dir = os.listdir(dir_img)
+        if not dict_images_relpath:
+            md_parser.unlock_text()
+            logger.warning(f"Markdown文档并未引用图像，同名dir内容如下: {list_dir}")
+            if input("是否清除同名文件夹？ [Y/n]: ").lower() != "n":
+                shutil.rmtree(dir_img)
+                logger.warning(f"已清除未引用文件夹:【{dir_img}】")
+            return False
+
+        # 删除未被引用的（多余）图像
+        set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_relpath.values()}
+        str_redundant = '\n'.join(set_redundant)
+        if set_redundant and input(f"""################ 是否删除多余图片文件：
+{str_redundant}
+################ [Y/n]:""").lower() != "n":
+            for file in set_redundant:
+                os.remove(file)
+
+        # 将图像链接地址改写为cnblog_link
+        dict_images = {}
+        # if dict_images_relpath:
+        for line_idx, rel_path in dict_images_relpath.items():
+            dict_images[line_idx] = os.path.join(os.path.dirname(path_md), rel_path)
+        md_parser.process_images(dict_images, self._upload_img)
+
+        # 备注原本地图像链接
+        text_lines = md_parser.get_text()
+        # if dict_images_relpath:
+        for line, url_local in dict_images_relpath.items():
+            # path_rel = os.path.relpath(url_local, md_parser.file_name)
+            md_parser.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
+        return True
+
     def post_blog(self, path_md):
         md_parser = self.md_fmt
 
@@ -167,28 +213,11 @@ class CnblogManager:
         # md_parser读取文档，并初步格式化
         format_anything(md_parser, path_md)
 
-        # 上传图片
-        dict_images_relpath = md_parser.get_images("local", force_abspath=False)
-        if dict_images_relpath:
-            dict_images = {}
-            for line_idx, rel_path in dict_images_relpath.items():
-                dict_images[line_idx] = os.path.join(os.path.dirname(path_md), rel_path)
-
-            # 将图像链接地址改写为cnblog_link
-            md_parser.process_images(dict_images, self._upload_img)
-        else:
-            md_parser.unlock_text()
-
-        text_lines = md_parser.get_text()
-        if dict_images_relpath:
-            # 备注原本地图像链接
-            for line, url_local in dict_images_relpath.items():
-                # path_rel = os.path.relpath(url_local, md_parser.file_name)
-                md_parser.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
-
+        # 图片的处理
+        images_updated = self._rebuild_images(path_md)
         # 更新category
         category_updated = self._update_categories(path_md)
-        if dict_images_relpath or category_updated:
+        if images_updated or category_updated:
             # 保存修改url的Markdown
             md_parser.overwrite()
 
@@ -197,7 +226,7 @@ class CnblogManager:
         struct_post = {
             "title": md_parser.metadata["title"],
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
-            "description": "".join(text_lines)
+            "description": "".join(md_parser.get_text())
         }
         postid = self.get_postid(md_parser.metadata["title"])
         if postid:
