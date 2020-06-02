@@ -161,9 +161,13 @@ class MarkdownParser:
                     if is_type_local:
                         continue
                     elif line.find("<!--"):
+                        be_ignored = False
                         for http_prefix in ignore_websites + self.ignore_websites:
-                            if url_img.startswith(http_prefix):
-                                continue
+                            if url_img.find(http_prefix) >= 0:
+                                be_ignored = True
+                                break
+                        if be_ignored:
+                            continue
                 elif force_abspath and not os.path.isabs(url_img):  # 相对路径转换
                     url_img = os.path.join(os.path.dirname(self.file_path), url_img)
                 dict_images[index] = url_img

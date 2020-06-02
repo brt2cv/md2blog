@@ -27,7 +27,7 @@ def init_repo(path_dir):
 
     path_db = os.path.realpath(path_dir)
     assert not os.path.exists(os.path.join(
-            path_db, DocumentsMgr.default_conf)), f"已存在数据库文件，不支持覆盖重写"
+            path_db, DocumentsMgr.default_conf)), "已存在数据库文件，不支持覆盖重写"
     DocumentsMgr.template_data(path_db)
 
     # 记录cnblog操作目录
@@ -88,7 +88,7 @@ def auto_upload(uploader):
     git.add(repo_files_to_update)
 
     # git commit, 若无需提交，则Ctrl+C终止程序即可
-    commit_message = input(f"Input commit message [回车默认提交]: ")
+    commit_message = input("Input commit message [回车默认提交]: ")
     git.commit(commit_message)
 
 

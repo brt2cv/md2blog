@@ -66,6 +66,15 @@
     4. 自动更新当前repo——由于added文档格式化，需要重新add。同理图像目录也需要重新添加仓库，以及 `.database.json` 数据库
     5. 实现对 `git commit` 的提交
 
-## Buglist
+## Todo List
 
+- [ ] 实现对多余图像的挑选和删除
+- [ ] 实现git_rename、git_move操作
+- [ ] git仓库的database.json使用中文来记录path
+- [ ] 已上传图像的link需要再次验证上传
+- [ ] 实现从cnblog获取database，更新本地json数据库
+
+Buglist
+
++ 通过上传md时，在post_struct["categories"]增加"[文章分类]"，无法解决上传作为“文章”类型的问题。暂时没有方式可以实现该需求。
 + H2超过10之后，会发成显示重复（例如：11. 11. title）。但本地文件却并没有问题，只是cnblog中的md内容发生重复。目前不确定该差别是否为cnblog平台问题（毕竟程序对1-9都显示正常)

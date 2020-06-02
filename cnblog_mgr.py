@@ -44,7 +44,7 @@ class CnblogManager:
         self.mime = None
 
         self.md_fmt = MarkdownFormatter()
-        self.md_fmt.set_ignore_websites(["https://img2020.cnblogs.com/blog/" +
+        self.md_fmt.set_ignore_websites(["cnblogs.com/blog/" +
                                         str(self.dict_conf["user_id"])])
 
         repo_dir = self.dict_conf["repo_dir"]
@@ -227,7 +227,7 @@ class CnblogManager:
             fp.write(dict_data['description'])
         print(f">> 已下载blog:【{path_save}】")
 
-    def delete_blog(self, postid_or_postid):
+    def delete_blog(self, title_or_postid):
         postid = self.get_postid(title_or_postid)
         if not postid:
             logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
@@ -244,12 +244,12 @@ class CnblogManager:
         except Exception as e:
             logger.error(e)
         else:
-            print(f">> 已删除blog:【{title}】")
+            print(f">> 已删除blog:【{title_or_postid}】")
 
             path_rel = self.db_mgr.data["postids"]["postid"]
             self.db_mgr.remove_doc(path_rel)
 
-    def rename_blog(self, postid, path_new_md):
+    def rename_blog(self, title_or_postid, path_new_md):
         postid = self.get_postid(title_or_postid)
         if not postid:
             logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
