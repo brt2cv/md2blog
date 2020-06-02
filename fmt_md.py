@@ -96,7 +96,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
                     break
             return serial_num
 
-        pattern_headline = re.compile(r"(#+) +(\d\.\S*)? *(.*)")
+        pattern_headline = re.compile(r"(#+) +(\d+\.\S*)? *(.*)")
 
         def update_line(line):
             serial_num = get_serial()

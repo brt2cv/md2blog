@@ -27,7 +27,7 @@
     - 尚不支持查找功能（待确认）
     - 不支持动态更新，编译的过程较复杂
 
-## 流程
+## 流程设计
 
 1. 编写md文档，或使用“简阅”下载markdown
 1. 修改文档内容，可以正常在本地浏览器渲染即可
@@ -42,7 +42,7 @@
     + upload_cnblog.py上传到“博客园”
     + git commit & push 当前仓库
 
-## 规范
+## 规范要求
 
 + 目录
 
@@ -110,6 +110,60 @@ python3 upload_cnblog.py -a
 
 关于 `user_id` ，特别说明下：并没有明确的接口可以获取到该ID，它不同于blog_id。本人获取这个的方法是，上传一张图像后，查询其生成的URL地址，从中提取，例如： https://img2020.cnblogs.com/blog/2039866/202006/2039866-20200602142016960-1926272797.jpg 中可以提取到我的user_id: 2039866
 
+## Markdown编辑工具推荐
+
+基于vscode
+
+* Markdown Shortcuts: 支持各种md格式化，最牛的就是自动生成表格的功能
+* Markdown TOC
+* Markdown AutoTOC
+* markdown-helper
+* Paste Image
+* Markdown Preview Enhanced（其实vscode默认md预览就很棒了）
+* Open In Default Browser（这个就很鸡肋了，还不如vscode自带预览功能）
+
+基于sublime
+
+* Markdown Editing
+* Markdown Preview: 只能在浏览器中预览
+* imagepaste: 这个强烈推荐，可以直接粘贴剪切板图片，并存储在同名目录下。
+    - 标准的插件，有个瑕疵： 只能存储为png图像，图像体积较大
+    - 推荐个人修改版本（其实改动很简单），默认存储jpg格式: https://gitee.com/brt2/subl-imgpaste.git
+* SublimeTmpl: 用于生成各类文件的模板，包括Markdown
+* 还有sublime自定义快捷键的功能，可以快速实现对H2/H3...等常见结构的格式化
+
+## 关于Markdown的格式（模板）
+
+```
+<!--
++++
+title       = "This is title to show!"
+description = ""
+date        = "2020-06-01"
+weight      = 5
+tags        = ["我的标签"]
+categories  = ["我的分类", "我的另一个分类"]
+keywords    = []
++++ -->
+
+[TOC]
+
+## This is a heading
+
+Body text...
+
+* item_0
+* item_1
+    - item_1_1
+    - item_1_2
+* item_3
+
+## This is another heading
+
+Body text...
+
+```
+
 ## Todo List
 
 - [x] 实现对多余图像的挑选和删除
@@ -124,7 +178,6 @@ python3 upload_cnblog.py -a
 
 + 通过上传md时，在post_struct["categories"]增加"[文章分类]"，无法解决上传作为“文章”类型的问题。暂时没有方式可以实现该需求。
 + 目前cnblog不支持webp的动图格式，但测试webp比gif压缩率更高；所以建议手动转换webp -> gif，上传cnblog后，源文档 `<!-- 注释 xxx.webp -->` 保留并git存储webp原图和gif转换图。
-+ H2超过10之后，会发成显示重复（例如：11. 11. title）。但本地文件却并没有问题，只是cnblog中的md内容发生重复。目前不确定该差别是否为cnblog平台问题（毕竟程序对1-9都显示正常)
 
 ## 寻求帮助
 

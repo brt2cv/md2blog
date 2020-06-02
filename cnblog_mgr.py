@@ -169,6 +169,7 @@ class CnblogManager:
         dict_images_relpath = md_parser.get_images("local", force_abspath=False)
         if not has_dir:
             assert not dict_images_relpath, f"Markdown文档引用的图像未存储在同名文件夹下: {dict_images_relpath}"
+            md_parser.unlock_text()
             return False
 
         # 删除未被引用的（多余）图像
