@@ -91,6 +91,38 @@ def auto_upload(uploader):
     commit_message = input("Input commit message [回车默认提交]: ")
     git.commit(commit_message)
 
+def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
+    from png2jpg import resize
+    from glob import glob
+
+    ratio = input(f"图像缩放比例 [默认{ratio_default}]: ")
+    ratio = float(ratio) if ratio else ratio_default
+
+    if os.path.isdir(path):
+        str_size = input(f"忽略的最小文件size [默认为 {min_size_default} KB]: ")
+        if not str_size:
+            str_size = min_size_default
+        min_size = int(1024*float(str_size))
+
+        max_shape = input("是否限定允许的最大像素 [Y/n]：")
+        if max_shape.lower() == "n":
+            max_shape = None
+        else:
+            _int = input(f"请输入最大允许像素，默认{max_shape_default}（e.g. 670 or 800,600): ")
+            if not _int:
+                max_shape = [max_shape_default] * 2
+            else:
+                max_shape = [int(i) for i in _int.split(",")]
+                if len(max_shape) == 1:
+                    max_shape = max_shape * 2
+
+        list_png = glob(path + "/*.png")
+        list_jpg = glob(path + "/*.jpg")
+        for path_img in list_jpg + list_png:
+            resize(path_img, ratio, min_size=min_size, max_shape=max_shape)
+    else:
+        resize(path, ratio, min_size=0, max_shape=None)
+
 
 if __name__ == "__main__":
     args = getopt()
@@ -114,25 +146,6 @@ if __name__ == "__main__":
         uploader.delete_blog(args.delete)
     elif args.save:
         uploader.download_blog(args.save)
-    elif args.resize:
-        from png2jpg import resize
-        from glob import glob
-
-        path = input("请输入待处理文件path/dir(支持直接拖拽): ")
-        path = path.strip().strip('"')
-        assert os.path.isabs(path)
-        ratio = input("图像缩放比例 [默认0.5]: ")
-        ratio = float(ratio) if ratio else 0.5
-
-        min_size = 1024*10
-        if os.path.isdir(path):
-            list_png = glob(path + "/*.png")
-            list_jpg = glob(path + "/*.jpg")
-            for path_img in list_jpg + list_png:
-                # print(path_img)
-                resize(path_img, ratio, min_size=min_size)
-        else:
-            resize(path, ratio, min_size=min_size)
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
         while True:
@@ -142,6 +155,11 @@ if __name__ == "__main__":
                     uploader.pull_img(path)
                     uploader.md_fmt.convert_png2jpg()
                     uploader.md_fmt.overwrite()
+                elif args.resize:
+                    resize_imgs(path,
+                                ratio_default=0.6,
+                                min_size_default=10,
+                                max_shape_default=670)
                 else:
                     uploader.post_blog(path)
             except FileNotFoundError as e:

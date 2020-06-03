@@ -152,7 +152,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
         dict_images_png = self.get_images("png")
         dict_images_jpg = self.get_images("jpg")
         callback = lambda url: resize(url, ratio=0.6, min_size=10240,
-                                      max_shape=[888,888], save_as_jpg=save_as_jpg)
+                                      max_shape=[680,680], save_as_jpg=save_as_jpg)
         self.process_images({**dict_images_png, **dict_images_jpg}, callback)
 
 #####################################################################

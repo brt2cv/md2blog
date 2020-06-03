@@ -129,7 +129,7 @@ if __name__ == "__main__":
             path = path.strip().strip('"')
             if os.path.exists(path):
                 # png2jpg(path, args.quality)
-                resize(path, ratio=0.6, min_size=10240, max_shape=[888,888])
+                resize(path, ratio=0.8, min_size=10240, max_shape=[888,888])
             else:
                 print(f"Error: File [{path}] NOT found.")
 

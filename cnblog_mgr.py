@@ -225,8 +225,10 @@ class CnblogManager:
 
         if self._is_article(path_md):
             md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
+
+        blog_title = md_parser.metadata["description"]  # 起一个吸引人的标题
         struct_post = {
-            "title": md_parser.metadata["title"],
+            "title": blog_title if blog_title else md_parser.metadata["title"],
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
             "description": "".join(md_parser.get_text())
         }
