@@ -167,12 +167,10 @@ Body text...
 ## Todo List
 
 - [x] 实现对多余图像的挑选和删除
-- [ ] 对于分辨率过高的图像进行resize操作
+- [x] 对于分辨率过高的图像进行resize操作
 - [ ] 实现git_rename、git_move操作
-- [ ] git仓库的database.json使用中文来记录path
 - [x] 已上传图像的link需要再次验证上传
 - [ ] 实现从cnblog获取database，更新本地json数据库
-- [x] 添加对mime文件对.webp图像的支持
 
 ## Buglist
 

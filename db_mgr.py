@@ -59,8 +59,8 @@ class DocumentsMgr:
             }
         }
         path_data = os.path.join(repo_dir, cls.default_conf)
-        with open(path_data, "x") as fp:
-            json.dump(conf_data, fp, indent=2)
+        with open(path_data, "x", encoding="utf8") as fp:
+            json.dump(conf_data, fp, indent=2)  # ensure_ascii=False,
 
     # def __del__(self):
     #     self.save_interface()
@@ -118,7 +118,7 @@ class DocumentsMgr:
             path_save = self.get_database()
 
         with open(path_save, "w+", encoding="utf8") as fp:
-            json.dump(self.data, fp, indent=2)
+            json.dump(self.data, fp, ensure_ascii=False, indent=2)
 
     def backup_data(self):
         """ 备份之前的database文件 """
