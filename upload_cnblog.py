@@ -54,23 +54,26 @@ def init_repo(path_dir):
 def auto_upload(uploader):
     import os
     # from handle_git import git_status
-    # from call_git import git_status, git_commit, git_add
     from call_git import GitRepo
 
     repo_dir = uploader.dict_conf["repo_dir"]
     git = GitRepo(repo_dir)
+    if git.is_status_mixed():
+        print("当前Stage暂存区有文件未更新至最新状态，无法判定用户明确的上传意图，请更新Repo仓库Git状态")
+        return
+
     repo_files_to_update = [uploader.db_mgr.get_database(), ]
 
     map_actions = {
-        "added"     : uploader.post_blog,
-        "modified"  : uploader.post_blog,
-        "deleted"   : uploader.delete_blog
+        "new_added"       : uploader.post_blog,
+        "modified_added"  : uploader.post_blog,
+        "deleted_added"   : uploader.delete_blog
     }
     def execute_upload(action):
         list_files = git.status(action)
 
         for path_file in list_files:
-            if not path_file.endswith("md"):
+            if not path_file.endswith(".md"):
                 continue
             abspath_file = os.path.join(repo_dir, path_file)
             map_actions[action](abspath_file)
