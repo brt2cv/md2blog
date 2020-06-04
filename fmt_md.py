@@ -16,7 +16,7 @@ from png2jpg import png2smaller, resize
 
 class MarkdownFormatter(MarkdownParser):
 
-    def format(self):
+    def format(self, resize_imgs=False):
         # self._update_categories()
 
         if not self.check_list["find_TOC"]:
@@ -38,7 +38,8 @@ class MarkdownFormatter(MarkdownParser):
         self.convert_png2jpg()
 
         # 对于高分辨率图像进行压缩
-        self.resize_high_resolution()
+        if resize_imgs:
+            self.resize_high_resolution()
 
         # 判断下载图像的size，执行resize或压缩
         self.compress_bigimg()
@@ -166,7 +167,7 @@ def getopt():
 
 def format_one_doc(fmt, path_file):
     fmt.load_file(path_file)
-    fmt.format()
+    fmt.format(resize_imgs=False)
 
 def format_dir(fmt, path_dir):
     list_files = glob.glob(f"{path_dir}/**/*.md", recursive=True)
