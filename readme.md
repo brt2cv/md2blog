@@ -50,7 +50,14 @@
 
 + 文件命名
 
-    使用 n-string 方式命名。其中n代表权重（1-9），直接影响文档在mkdocs的排序。由于文件名的限制，string无法等同于文档title。
+    关于blog的title采用如下策略：
+
+    + 优先使用"description": 一句吸引人眼球的标题，例如：“他写微信软文赚了1173万元，愿意手把手教你文案秘籍——只在这周六”（博客也需要标题党）
+    + "title": 如果"description"为空（默认），则使用title作为标题，这个可以“程序化”，简洁明了——“git rebase 使用技巧”
+    + 文件名仅用于本地文件记录，与blog的title并不对应。
+    + 文件名影响mkdocs的排序：
+        * 文件名是mkdocs的默认排序规则
+        * mkdocs通过程序，索引文章的weight，并记录于_index.md中
 
 + 标签
 
@@ -65,6 +72,18 @@
     3. upload_cnblog格式化Markdown文件，上传至cnblog，并改写本地数据库表
     4. 自动更新当前repo——由于added文档格式化，需要重新add。同理图像目录也需要重新添加仓库，以及 `.database.json` 数据库
     5. 实现对 `git commit` 的提交
+
++ 简化操作
+    * 创建新文件时使用格式模板
+    * 上传时自动格式化Markdown文件
+    * 自动对Headings排序，生成层级索引——“1.2.4”
+    * 图像不会进行重复上传
+    * 自动压缩图像，减小空间占用
+    * 自动png转jpg
+    * 支持过高分辨率的resize压缩
+    * 自动实现category的管理
+    * 支持label管理
+    * 支持文档目录自动生成
 
 ## 使用
 
@@ -131,6 +150,12 @@ python3 upload_cnblog.py -a
     - 推荐个人修改版本（其实改动很简单），默认存储jpg格式: https://gitee.com/brt2/subl-imgpaste.git
 * SublimeTmpl: 用于生成各类文件的模板，包括Markdown
 * 还有sublime自定义快捷键的功能，可以快速实现对H2/H3...等常见结构的格式化
+
+基于Simpread（简阅）
+
+* 安利一下这款国人开源工具，工具后台已经对上百个常见网站做了适配，可以直接将html页面转码Markdown下载。
+* 当然，下载的格式毕竟还是有必要人工修整一下的，但已经节约了90%的时间了，知足吧
+* 本工具会自动再上传时标记【转载】字样，同时建议用户保留 `本文由 简悦 SimpRead 转码， 原文地址...` 的内容。
 
 ## 关于Markdown的格式（模板）
 

@@ -208,6 +208,21 @@ class CnblogManager:
             md_parser.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
         return True
 
+    def get_md_title(self):
+        filename_as_title = False
+        blog_title = self.md_fmt.metadata["description"]  # 起一个吸引人的标题
+        if not blog_title:
+            blog_title = self.md_fmt.metadata["title"]
+        file_name = os.path.basename(self.md_fmt.file_path)
+        if not blog_title:
+            blog_title = file_name[:-3]
+            filename_as_title = True
+        if file_name.startswith("simpread-"):
+            if filename_as_title:
+                blog_title = blog_title[len("simpread-"):]
+            blog_title = "【转载】" + blog_title
+        return blog_title
+
     def post_blog(self, path_md):
         md_parser = self.md_fmt
 
@@ -226,9 +241,8 @@ class CnblogManager:
         if self._is_article(path_md):
             md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
 
-        blog_title = md_parser.metadata["description"]  # 起一个吸引人的标题
         struct_post = {
-            "title": blog_title if blog_title else md_parser.metadata["title"],
+            "title": self.get_md_title(),
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
             "description": "".join(md_parser.get_text())
         }
