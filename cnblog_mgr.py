@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 import json
 import xmlrpc.client
+from time import sleep
 
 from fmt_md import MarkdownFormatter, format_one_doc
 from db_mgr import DocumentsMgr
@@ -19,6 +20,8 @@ except ImportError:
     from logging import getLogger
 logger = getLogger()
 
+
+TIME_FOR_FREQUENCE_LIMIT = 31
 TESTING = False
 if TESTING:
     print("\n" + "#"*49)
@@ -250,7 +253,13 @@ class CnblogManager:
         if postid:
             self._repost_blog(postid, struct_post)
         else:
-            self._new_blog(struct_post)
+            try:
+                self._new_blog(struct_post)
+            except xmlrpc.client.Fault:
+                # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
+                print("cnblog限制了发送频率……请静候30s\n程序正在后台运行，请勿退出")
+                sleep(TIME_FOR_FREQUENCE_LIMIT)
+                self._new_blog(struct_post)
 
     def download_blog(self, title_or_postid, ignore_img=True):
         if not ignore_img:
