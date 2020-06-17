@@ -235,13 +235,36 @@ class DocumentsMgr:
         """
         pass
 
-# if __name__ == "__main__":
-#     def getopt():
-#         import argparse
+    def check_repo_dbmap(self):
+        """ 根据repo中的数据库检测数据内容书否对应 """
+        from call_git import GitRepo
 
-#         parser = argparse.ArgumentParser("db_mgr", description="仅用于生成db初始化文件")
-#         parser.add_argument("repo_dir", action="store", help="文档Git项目的所在目录")
-#         return parser.parse_args()
+        git = GitRepo(self.repo_dir)
+        list_files = git.files("\.md")
+        print(list_files)
 
-#     args = getopt()
-#     DocumentsMgr.template_data(os.path.realpath(args.repo_dir))
+
+if __name__ == "__main__":
+    def getopt():
+        import argparse
+
+        parser = argparse.ArgumentParser("db_mgr", description="仅用于生成db初始化文件")
+        parser.add_argument("-i", "--init", action="store", help="指定Git项目的所在目录，并创建数据库")
+        parser.add_argument("-c", "--selfcheck", action="store_true", help="数据库自检")
+        parser.add_argument("-t", "--target", action="store", default=".cnblog.json", help="数据库目录")
+        # parser.add_argument("-r", "--repair", action="store", help="修复数据库内容")
+        return parser.parse_args()
+
+    args = getopt()
+    if args.init:
+        DocumentsMgr.template_data(os.path.realpath(args.init))
+        exit()
+
+    assert args.target, f"请输入-t选项用于指定cnblog.json所在目录"
+    with open(args.target, "r") as fp:
+        dict_conf = json.load(fp)
+
+    repo_dir = dict_conf["repo_dir"]
+    mgr = DocumentsMgr(repo_dir)
+    if args.selfcheck:
+        mgr.check_repo_dbmap()
