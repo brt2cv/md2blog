@@ -98,6 +98,7 @@ git clone git@gitee.com:brt2/md2blog.git
 cd md2blog
 python3 upload_cnblog.py -r REPO_DIR
 
+cp demo/cnblog.json .cnblog.json
 # 修改 .cnblog.json 文件，具体配置内容见："配置文件 .cnblog.json 的说明"
 vi .cnblog.json
 

@@ -1,0 +1,9 @@
+{
+    "blog_url": "https://rpc.cnblogs.com/metaweblog/brt2",
+    "blog_id" : "anything",
+    "app_key" : "brt2",
+    "user_id" : "2039866",
+    "username": "brt2",
+    "password": "this is a secret...",
+    "repo_dir": "abspath to your NoteGitRepo-dir"
+}

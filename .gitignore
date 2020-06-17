@@ -1,4 +1,5 @@
 .cnblog.json
+note
 
 **/ui/*[!*.ui]
 **/.vscode/*[!demo/]
