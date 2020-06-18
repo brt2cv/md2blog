@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-# @Date    : 2020-05-25
+# @Date    : 2020-06-18
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.0.1
+# @Version : 0.1.1
 
 import os
 import json
+from pathlib import Path
 
 from doc_parser import MarkdownParser
 
@@ -31,14 +32,19 @@ class DocumentsMgr:
             "dir_article": "articles",
 
             "structure": {
-            #     "path_doc": {
-            #         "title" : ""
-            #         "weight": 0,
-            #         "postid": 1234xxx,
-            #         "tags"  : [],
-            #         "date"  : "2020-05-25"
-            #     },
-            #     ...
+            # "programming": {
+            #     "3-syntax": {
+            #         "path_doc": {
+            #             "title" : ""
+            #             "weight": 0,
+            #             "postid": 1234xxx,
+            #             "tags"  : [],
+            #             "date"  : "2020-05-25"
+            #         },
+            #         ...
+            #     }
+            # },
+            # "artile": {}
             },
             # 以下为冗余数据，空间换时间
             "titles": {
@@ -129,9 +135,50 @@ class DocumentsMgr:
     def rebuild_titeles(self):
         """ 通过structure重新计算titles """
 
+    def get_structure(self, path_unix):
+        """ 返回dict_info，或者 """
+        tuple_parts = Path(path_unix).parts
+        curr_level = self.data["structure"]
+        for dirname in tuple_parts[:-1]:
+            if dirname not in curr_level:
+                return
+            curr_level = curr_level[dirname]
+        return curr_level.get(tuple_parts[-1])
+
+    def _exists_structure(self, path_unix):
+        return self.get_structure(path_unix) is not None
+
+    def _set_structure(self, path_unix, dict_info):
+        tuple_parts = Path(path_unix).parts
+        curr_level = self.data["structure"]
+        for dirname in tuple_parts[:-1]:
+            if dirname not in curr_level:
+                curr_level[dirname] = {}
+            curr_level = curr_level[dirname]
+
+        # assert tuple_parts[-1] not in curr_level, "文件已存在，勿重复添加"
+        curr_level[tuple_parts[-1]] = dict_info
+
+    def _del_structure(self, path_unix):
+        tuple_parts = Path(path_unix).parts
+        curr_level = self.data["structure"]
+
+        list_levels = []
+        for dirname in tuple_parts[:-1]:
+            list_levels.append((curr_level, dirname))
+            curr_level = curr_level[dirname]
+
+        del curr_level[tuple_parts[-1]]
+
+        for dict_level, dirname in list_levels.reverse():
+            if dict_level[dirname]:
+                break
+            else:
+                del dict_level[dirname]
+
     def add_doc(self, md_parser, postid):
         path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
-        assert path_rel not in self.data["structure"], "文件已存在，勿重复添加"
+        assert not self._exists_structure(path_rel), "文件已存在，勿重复添加"
         doc_info = {
             "title" : md_parser.metadata["title"],
             "weight": md_parser.metadata["weight"],
@@ -157,23 +204,22 @@ class DocumentsMgr:
             self.data["dates"][doc_info["date"]] = []
         self.data["dates"][doc_info["date"]].append(path_rel)
 
-        self.data["structure"][path_rel] = doc_info
+        self._set_structure(path_rel, doc_info)
         self.save_data()
 
     def remove_doc(self, path_rel):
-        doc_info = self.data["structure"][path_rel]
+        doc_info = self._get_structure(path_rel)
         del self.data["titles"][doc_info["title"]]
         for tag in doc_info["tags"]:
             self.data["tags"][tag].remove(path_rel)
         self.data["dates"][doc_info["date"]].remove(path_rel)
         del self.data["postids"][doc_info["postid"]]
-        del self.data["structure"][path_rel]
+        self._del_structure(path_rel)
         self.save_data()
 
     def modify_doc(self, md_parser):
         path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
-        old_info = self.data["structure"][path_rel]
-
+        old_info = self.get_structure(path_rel)
         new_info = {
             "title" : md_parser.metadata["title"],
             "weight": md_parser.metadata["weight"],
@@ -201,7 +247,7 @@ class DocumentsMgr:
             self.data["dates"][new_info["date"]] = []
         self.data["dates"][new_info["date"]].append(path_rel)
 
-        self.data["structure"][path_rel] = new_info
+        self._set_structure(path_rel, new_info)
         self.save_data()
 
     def move_doc(self, path_src, path_dst):
@@ -212,7 +258,7 @@ class DocumentsMgr:
         """ return str(postid) or None if not exist """
         path_rel = self.data["titles"].get(doc_title)
         if path_rel:
-            return self.data["structure"][path_rel]["postid"]
+            return self.get_structure(path_rel)["postid"]
 
     def exist_doc(self, doc_title):
         return self.get_postid(doc_title)
@@ -235,13 +281,66 @@ class DocumentsMgr:
         """
         pass
 
+    def _rebuild_format(self):
+        for path, md_info in self.data["structure"].items():
+            # list_parts = list(Path(path).parts)
+            path_unix = path.replace("\\", "/")
+
+            list_parts = path_unix.split("/")
+            file_name = list_parts.pop()
+            if file_name == "_index.md":
+                continue
+            curr_level = structure_rebuild
+            for part in list_parts:
+                if part not in curr_level:
+                    curr_level[part] = {}
+                curr_level = curr_level[part]
+            curr_level[file_name] = md_info
+
+        self.data["structure"] = structure_rebuild
+        self.save_data("db_rebuild.json")
+
     def check_repo_dbmap(self):
         """ 根据repo中的数据库检测数据内容书否对应 """
         from call_git import GitRepo
 
+        # 获取self.data中的全部路径
+        set_db_files = set()
+        def join_path_part(dict_data, path_prefix):
+            for fname, next_level in dict_data.items():
+                # path_join = path_prefix + "/" + fname
+                new_prefix = path_prefix.copy()
+                new_prefix.append(fname)
+                if fname.endswith(".md"):
+                    path_join = "/".join(new_prefix)
+                    set_db_files.add(path_join)
+                else:
+                    join_path_part(next_level, new_prefix)
+
+        join_path_part(self.data["structure"], [])
+
+        # from pprint import pprint
+        # pprint(set_db_files)
+
+        # 通过git获取当前管理的全部文件
         git = GitRepo(self.repo_dir)
-        list_files = git.files("\.md")
-        print(list_files)
+        list_files = set(git.files("\.md"))
+
+        # from pprint import pprint
+        # pprint(list_files)
+
+        for path_md in list_files:
+            if os.path.basename(path_md) == "_index.md":
+                continue
+            # list_parts = list(Path(path_md).parts)
+            path_unix = path_md.replace("\\", "/")
+            try:
+                set_db_files.remove(path_unix)
+            except KeyError:
+                print(f"[-] 当前db中缺失文件信息【{path_unix}】")
+
+        for path_unix in set_db_files:
+            print(f"[+] 当前db中多余的文件信息【{path_unix}】")
 
 
 if __name__ == "__main__":
@@ -252,6 +351,7 @@ if __name__ == "__main__":
         parser.add_argument("-i", "--init", action="store", help="指定Git项目的所在目录，并创建数据库")
         parser.add_argument("-c", "--selfcheck", action="store_true", help="数据库自检")
         parser.add_argument("-t", "--target", action="store", default=".cnblog.json", help="数据库目录")
+        parser.add_argument("-b", "--rebuild", action="store_true", help="重构.cnblog.json的structure结构")
         # parser.add_argument("-r", "--repair", action="store", help="修复数据库内容")
         return parser.parse_args()
 
@@ -260,11 +360,15 @@ if __name__ == "__main__":
         DocumentsMgr.template_data(os.path.realpath(args.init))
         exit()
 
-    assert args.target, f"请输入-t选项用于指定cnblog.json所在目录"
+    # assert args.target, f"请输入-t选项用于指定cnblog.json所在目录"
     with open(args.target, "r") as fp:
         dict_conf = json.load(fp)
 
     repo_dir = dict_conf["repo_dir"]
     mgr = DocumentsMgr(repo_dir)
+
     if args.selfcheck:
         mgr.check_repo_dbmap()
+    elif args.rebuild:
+        assert False, "请更改代码，定义rebuild的操作后，注释当前行再执行命令"
+        mgr._rebuild_format()

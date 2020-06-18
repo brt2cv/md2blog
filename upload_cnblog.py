@@ -5,6 +5,7 @@
 # @Version : 0.1.4
 
 import os.path
+from collections import OrderedDict
 
 
 def getopt():
@@ -64,11 +65,12 @@ def auto_upload(uploader):
 
     repo_files_to_update = [uploader.db_mgr.get_database(), ]
 
-    map_actions = {
-        "new_added"       : uploader.post_blog,
-        "modified_added"  : uploader.post_blog,
-        "deleted_added"   : uploader.delete_blog
-    }
+    map_actions = OrderedDict([
+        ("modified_added"  , uploader.post_blog),
+        ("deleted_added"   , uploader.delete_blog),
+        ("new_added"       , uploader.post_blog),
+    ])
+
     def execute_upload(action):
         list_files = git.status(action)
 

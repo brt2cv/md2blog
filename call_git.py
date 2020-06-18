@@ -36,11 +36,11 @@ class GitRepo:
 
     def switch_dir(func):
         """ 装饰器 """
-        def wrapper(self, args):
+        def wrapper(self, *args, **kwargs):
             def inner_wrapper():
                 cwd = os.path.abspath(os.path.curdir)
                 os.chdir(self.repo_dir)
-                ret = func(self, args)
+                ret = func(self, *args, **kwargs)
                 os.chdir(cwd)
                 return ret
             return inner_wrapper()
@@ -55,7 +55,7 @@ class GitRepo:
         else:
             return list_lines
 
-    def _filter_status(stdout_lines, type_):
+    def _filter_status(self, stdout_lines, type_):
         """ git-status是用两位状态表示的 """
         list_files = []
         for line in stdout_lines:
