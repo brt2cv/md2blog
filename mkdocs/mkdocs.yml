@@ -1,0 +1,23 @@
+site_name: Bright's Notebook
+# site_description: Python开发文档
+copyright: Bright Li - brt2@qq.com
+# theme: readthedocs
+theme: 
+    name: "material"
+    language: 'zh'
+    palette:
+        primary: "red"
+        accent: "red"
+    font:
+        text: "Roboto"
+extra:
+    search:
+        language: "en, jp"
+docs_dir: ../note/programming
+site_dir: site
+dev_addr: 0.0.0.0:31820
+# nav:
+# - 首页: "readme.md"
+# - 关于我们:
+#   - 作者: "tool/about.md"
+#   - 相关说明: "tool/description.md"
