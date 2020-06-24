@@ -154,7 +154,7 @@ if __name__ == "__main__":
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip().strip('"')
+            path = path.strip().strip('"').strip("'")
             try:
                 if args.pull_img:
                     uploader.pull_img(path)

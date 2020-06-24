@@ -20,7 +20,10 @@ class MarkdownFormatter(MarkdownParser):
         # self._update_categories()
 
         if not self.check_list["find_TOC"]:
-            self.insert_text(self.check_list["index_H2"], "[TOC]\n\n")
+            toc_index = self.check_list["index_H2"]
+            if toc_index is None:
+                toc_index = 0
+            self.insert_text(toc_index, "[TOC]\n\n")
 
         if self.check_list["index_H1"]:
             self.pop_text(self.check_list["index_H1"])
