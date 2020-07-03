@@ -189,7 +189,7 @@ class DocumentsMgr:
 
         # update related
         existed = self.data["titles"].get(doc_info["title"])
-        assert doc_info["title"] not in self.data["titles"], f"Title重复，冲突文件：{existed}"
+        # assert doc_info["title"] not in self.data["titles"], f"Title重复，冲突文件：{existed}"
         assert doc_info["postid"] not in self.data["postids"], f"PostID重复: {doc_info['postid']}"
 
         self.data["titles"][doc_info["title"]] = path_rel
