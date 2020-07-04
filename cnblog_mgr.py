@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2020-05-25
+# @Date    : 2020-07-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.2
+# @Version : 0.1.3
 
 import os
 import shutil
@@ -21,7 +21,7 @@ except ImportError:
 logger = getLogger()
 
 
-TIME_FOR_FREQUENCE_LIMIT = 31
+TIME_FOR_FREQUENCE_LIMIT = 5
 TESTING = False
 if TESTING:
     print("\n" + "#"*49)
@@ -64,14 +64,15 @@ class CnblogManager:
 
     # def load_repo_conf(self, path_conf):
 
-    def get_postid(self, title_or_postid):
-        if title_or_postid.isdecimal():
-            postid = title_or_postid
-        else:
-            postid = self.db_mgr.get_postid(title_or_postid)
-            if isinstance(postid, list):
-                raise PostidNotUnique(f"获取到postid不唯一，请指定postid值: 【{postid}】")
-        return postid
+    def get_postid(self, path=None, title=None):
+        # if path.isdecimal():
+        #     return path  # just the postid
+        if path:
+            if os.path.abspath(path):
+                path = os.path.relpath(path, self.dict_conf["repo_dir"])
+            return self.db_mgr.get_postid_by_path(path)
+        elif title:
+            return self.db_mgr.get_postid_by_title(title)
 
     def get_user_info(self):
         """ return a list of user-info """
@@ -211,24 +212,6 @@ class CnblogManager:
             md_parser.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
         return True
 
-    def get_md_title(self):
-        blog_title = self.md_fmt.metadata["description"]  # 起一个吸引人的标题
-        if blog_title:
-            return blog_title
-
-        filename_as_title = False
-        blog_title = self.md_fmt.metadata["title"]
-        file_name = os.path.basename(self.md_fmt.file_path)
-        if not blog_title:
-            blog_title = file_name[:-3]
-            filename_as_title = True
-
-        if file_name.startswith("simpread-"):
-            if filename_as_title:
-                blog_title = blog_title[len("simpread-"):]
-            blog_title = "【转载】" + blog_title
-        return blog_title
-
     def post_blog(self, path_md):
         md_parser = self.md_fmt
 
@@ -247,30 +230,32 @@ class CnblogManager:
         if self._is_article(path_md):
             md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
 
-        blog_title = self.get_md_title()
+        blog_title = self.md_fmt.make_title()
         struct_post = {
             "title": blog_title,
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
             "description": "".join(md_parser.get_text())
         }
 
-        postid = self.get_postid(blog_title)
+        postid = self.get_postid(path=self.md_fmt.file_path)
         if postid:
             self._repost_blog(postid, struct_post)
         else:
-            try:
-                self._new_blog(struct_post)
-            except xmlrpc.client.Fault:
-                # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
-                print("cnblog限制了发送频率……请静候30s\n程序正在后台运行，请勿退出")
-                sleep(TIME_FOR_FREQUENCE_LIMIT)
-                self._new_blog(struct_post)
+            while True:
+                try:
+                    self._new_blog(struct_post)
+                except xmlrpc.client.Fault:
+                    # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
+                    print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
+                    sleep(TIME_FOR_FREQUENCE_LIMIT)
+                else:
+                    break
 
     def download_blog(self, title_or_postid, ignore_img=True):
         if not ignore_img:
             raise Exception("尚未开发，敬请期待")
 
-        postid = self.get_postid(title_or_postid)
+        postid = title_or_postid if title_or_postid.isdecimal() else self.get_postid(title=title_or_postid)
         if not postid:
             logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
 但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。")
@@ -288,12 +273,9 @@ class CnblogManager:
             fp.write(dict_data['description'])
         print(f">> 已下载blog:【{path_save}】")
 
-    def delete_blog(self, title_or_postid):
-        postid = self.get_postid(title_or_postid)
-        if not postid:
-            logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
-但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。")
-            return
+    def delete_blog(self, postid: str):
+        if not postid.isdecimal():
+            postid = self.get_postid(path=postid)
 
         try:
             self.cnblog_server.blogger.deletePost(
@@ -302,27 +284,19 @@ class CnblogManager:
                     self.dict_conf["username"],
                     self.dict_conf["password"],
                     True)
-        except Exception as e:
-            logger.error(e)
+        except xmlrpc.client.Fault:
+            # logger.error(e)  # <Fault 500: 'can not be deleted！'>
+            title = self.db_mgr.get_title_by_postid(postid)
+            logger.error(f"Web操作失败，请手动删除博客【{title}】")
         else:
-            print(f">> 已删除blog:【{title_or_postid}】")
+            print(f">> 已删除blog:【{postid}】")
 
-            path_rel = self.db_mgr.data["postids"]["postid"]
-            self.db_mgr.remove_doc(path_rel)
-
-    def rename_blog(self, title_or_postid, path_new_md):
-        postid = self.get_postid(title_or_postid)
-        if not postid:
-            logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
-但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。")
-            return
-
-        self.delete_blog(postid)
-        self.post_blog(path_new_md)
+        path_rel = self.db_mgr.data["postids"][postid]
+        self.db_mgr.remove_doc(path_rel)
 
     def get_recent_post(self, num=9999):
         """
-        return: {
+        return: [{
             'dateCreated': <DateTime '20200523T20:47:00' at 0x7fbba8995fa0>,
             'description': '...',
             'title': 'Python数据结构',
@@ -333,12 +307,11 @@ class CnblogManager:
             'postid': '12944353',
             'source': {},
             'userid': '-2'
-        }
+        }, ...]
         """
         recent_post = self.cnblog_server.metaWeblog.getRecentPosts(
                         self.dict_conf["blog_id"],
                         self.dict_conf["username"],
                         self.dict_conf["password"],
                         num)
-        for post in recent_post:
-            print(post)
+        return recent_post

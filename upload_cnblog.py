@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2020-05-27
+# @Date    : 2020-07-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.4
+# @Version : 0.1.5
 
 import os.path
 from collections import OrderedDict
@@ -13,6 +13,7 @@ def getopt():
 
     parser = argparse.ArgumentParser("upload_cnblog", description="")
     parser.add_argument("-r", "--repo", action="store", help="初始化仓库路径")
+    parser.add_argument("-c", "--check", action="store_true", help="校正本地数据库")
     parser.add_argument("-u", "--user", action="store_true", help="获取用户博客信息")
     parser.add_argument("-g", "--get", action="store_true", help="获取近期上传的列表")
     parser.add_argument("-d", "--delete", action="store", help="删除博客文档")
@@ -81,6 +82,8 @@ def auto_upload(uploader):
             map_actions[action](abspath_file)
 
             # 将文件更新到记录列表
+            if action == "deleted_added":
+                continue
             repo_files_to_update.append(abspath_file)
             dir_res = abspath_file[:-3]  # 去除.md后缀
             if os.path.exists(dir_res):
@@ -128,6 +131,59 @@ def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
     else:
         resize(path, ratio, min_size=0, max_shape=None)
 
+def check_db_from_cnblog(uploader):
+    """ 网络、本地、数据库同步检测:
+        + 存在性(postid, title)
+        + 标签(tags): 需要通过网络爬虫实现
+    """
+    from pprint import pprint
+    from db_mgr import DocumentsMgr
+
+    results = {
+        "blog": set(),  # 多出项, tuple(postid, title)
+        "db"  : set(),
+        "repo": set(),  # 缺失项
+    }
+
+    # 数据库
+    repo_dir = uploader.dict_conf["repo_dir"]
+    doc_mgr = DocumentsMgr(repo_dir)
+    db_postids = doc_mgr.data["postids"]
+    # db_titles = doc_mgr.data["titles"]
+
+    # 本地文件set集合
+    repo_files = doc_mgr.walk_repo(["_index.md"])  # \\ or / ??
+
+    # 网络cnblog博客数据
+    list_posted = uploader.get_recent_post()
+    for dict_post in list_posted:
+        web_title  = dict_post['title']
+        web_postid = dict_post['postid']
+        # 数据库的存在性
+        if web_postid not in db_postids:
+            results["blog"].add((web_postid, web_title))
+            continue
+
+        # 本地文件的存在性
+        path_local = db_postids[web_postid]
+        if path_local not in repo_files:
+            results["repo"].add(path_local)
+        else:
+            repo_files.remove(path_local)
+        del db_postids[web_postid]
+
+    def report(msg, repo_diff):
+        if repo_diff:
+            print(msg)
+            pprint(repo_diff)
+
+    report("web_cnblog多出了以下文章:", results["blog"])
+    report("本地文件缺失了数据库记录文档:", results["repo"])
+    db_remains = set(db_postids.values())
+    report("web_cnblog缺失了以下记录:", db_remains & repo_files)
+    report("数据库未记录的本地文档:", repo_files - db_remains)
+    report("数据库记录了的无效文档:", db_remains - repo_files)
+
 
 if __name__ == "__main__":
     args = getopt()
@@ -145,6 +201,8 @@ if __name__ == "__main__":
     elif args.user:
         info = uploader.get_user_info()
         print(info)
+    elif args.check:
+        check_db_from_cnblog(uploader)
     elif args.get:
         uploader.get_recent_post()
     elif args.delete:

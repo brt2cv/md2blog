@@ -184,6 +184,23 @@ class MarkdownParser:
                 num_space = self.get_text()[line_idx].find("!")
                 self.modify_text(line_idx, " "*num_space + f"![]({url_new})")
 
+    def make_title(self):
+        blog_title = self.metadata["description"]  # 起一个吸引人的标题
+        if blog_title:
+            return blog_title
+
+        filename_as_title = False
+        blog_title = self.metadata["title"]
+        file_name = os.path.basename(self.file_path)
+        if not blog_title:
+            blog_title = file_name[:-3]
+            filename_as_title = True
+
+        if file_name.startswith("simpread-"):
+            if filename_as_title:
+                blog_title = blog_title[len("simpread-"):]
+            blog_title = "【转载】" + blog_title
+        return blog_title
 
 # if __name__ == "__main__":
 #     import pathlib

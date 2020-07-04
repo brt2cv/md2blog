@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-# @Date    : 2020-06-18
+# @Date    : 2020-07-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.1
+# @Version : 0.1.2
 
 import os
 import json
 from pathlib import Path
-
-from doc_parser import MarkdownParser
 
 
 class DocumentsMgr:
@@ -136,7 +134,8 @@ class DocumentsMgr:
         """ 通过structure重新计算titles """
 
     def get_structure(self, path_unix):
-        """ 返回dict_info，或者 """
+        """ 返回dict_info，或者 None """
+        assert not os.path.isabs(path_unix), "请使用相对路径查询[structrue]"
         tuple_parts = Path(path_unix).parts
         curr_level = self.data["structure"]
         for dirname in tuple_parts[:-1]:
@@ -169,18 +168,36 @@ class DocumentsMgr:
             curr_level = curr_level[dirname]
 
         del curr_level[tuple_parts[-1]]
+        list_levels.reverse()
 
-        for dict_level, dirname in list_levels.reverse():
+        for dict_level, dirname in list_levels:
             if dict_level[dirname]:
                 break
             else:
                 del dict_level[dirname]
 
-    def add_doc(self, md_parser, postid):
+    def walk_repo(self, ignore_list=None):
+        """ return: a set of path_file """
+        if ignore_list is None:
+            ignore_list = []
+
+        set_files = set()
+        for root, dirs, files in os.walk(self.repo_dir, topdown=False):
+            path_rel = os.path.relpath(root, self.repo_dir)
+
+            for name in files:
+                if name[-3:] != ".md":
+                    continue
+                if name in ignore_list:
+                    continue
+                set_files.add(os.path.join(path_rel, name))
+        return set_files
+
+    def add_doc(self, md_parser, postid: str):
         path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
         assert not self._exists_structure(path_rel), "文件已存在，勿重复添加"
         doc_info = {
-            "title" : md_parser.metadata["title"],
+            "title" : md_parser.make_title(),
             "weight": md_parser.metadata["weight"],
             "postid": postid,
             "tags"  : md_parser.metadata["tags"],
@@ -188,9 +205,9 @@ class DocumentsMgr:
         }
 
         # update related
-        existed = self.data["titles"].get(doc_info["title"])
-        # assert doc_info["title"] not in self.data["titles"], f"Title重复，冲突文件：{existed}"
         assert doc_info["postid"] not in self.data["postids"], f"PostID重复: {doc_info['postid']}"
+        # existed = self.data["titles"].get(doc_info["title"])
+        # assert doc_info["title"] not in self.data["titles"], f"Title重复，冲突文件：{existed}"
 
         self.data["titles"][doc_info["title"]] = path_rel
         self.data["postids"][doc_info["postid"]] = path_rel
@@ -208,7 +225,7 @@ class DocumentsMgr:
         self.save_data()
 
     def remove_doc(self, path_rel):
-        doc_info = self._get_structure(path_rel)
+        doc_info = self.get_structure(path_rel)
         del self.data["titles"][doc_info["title"]]
         for tag in doc_info["tags"]:
             self.data["tags"][tag].remove(path_rel)
@@ -221,7 +238,7 @@ class DocumentsMgr:
         path_rel = os.path.relpath(os.path.abspath(md_parser.file_path), self.repo_dir)
         old_info = self.get_structure(path_rel)
         new_info = {
-            "title" : md_parser.metadata["title"],
+            "title" : md_parser.make_title(),
             "weight": md_parser.metadata["weight"],
             "postid": old_info["postid"],
             "tags"  : md_parser.metadata["tags"],
@@ -254,14 +271,28 @@ class DocumentsMgr:
         raise Exception("尚未开发，敬请期待")
         self.save_data()
 
-    def get_postid(self, doc_title):
-        """ return str(postid) or None if not exist """
-        path_rel = self.data["titles"].get(doc_title)
-        if path_rel:
-            return self.get_structure(path_rel)["postid"]
+    def get_title_by_path(self, path):
+        dict_info = self.get_structure(path)
+        if dict_info:
+            return dict_info["title"]
 
-    def exist_doc(self, doc_title):
-        return self.get_postid(doc_title)
+    def get_title_by_postid(self, postid):
+        path_rel = self.data["postids"].get(postid)
+        return self.get_title_by_path(path_rel)
+
+    def get_postid_by_path(self, path):
+        """ return str(postid) or None if not exist """
+        dict_info = self.get_structure(path)
+        if dict_info:
+            return dict_info["postid"]
+
+    def get_postid_by_title(self, doc_title):
+        """ Not Recommand! """
+        path_rel = self.data["titles"].get(doc_title)
+        return self.get_postid_by_path(path_rel)
+
+    # def exist_doc(self, doc_title):
+    #     return self.get_postid_by_title(doc_title)
 
     def sort_dir(self, path_dir, method="weight"):
         """ 排序目录下文件 """
@@ -279,26 +310,25 @@ class DocumentsMgr:
         """ 从cnblog下拉最新的元数据，并更新本地数据库：
             由于可能从cnblog上增加了label等数据，导致本地数据过时。
         """
-        pass
 
-    def _rebuild_format(self):
-        for path, md_info in self.data["structure"].items():
-            # list_parts = list(Path(path).parts)
-            path_unix = path.replace("\\", "/")
+    # def rebuild_format(self):
+    #     for path, md_info in self.data["structure"].items():
+    #         # list_parts = list(Path(path).parts)
+    #         path_unix = path.replace("\\", "/")
 
-            list_parts = path_unix.split("/")
-            file_name = list_parts.pop()
-            if file_name == "_index.md":
-                continue
-            curr_level = structure_rebuild
-            for part in list_parts:
-                if part not in curr_level:
-                    curr_level[part] = {}
-                curr_level = curr_level[part]
-            curr_level[file_name] = md_info
+    #         list_parts = path_unix.split("/")
+    #         file_name = list_parts.pop()
+    #         if file_name == "_index.md":
+    #             continue
+    #         curr_level = structure_rebuild
+    #         for part in list_parts:
+    #             if part not in curr_level:
+    #                 curr_level[part] = {}
+    #             curr_level = curr_level[part]
+    #         curr_level[file_name] = md_info
 
-        self.data["structure"] = structure_rebuild
-        self.save_data("db_rebuild.json")
+    #     self.data["structure"] = structure_rebuild
+    #     self.save_data("db_rebuild.json")
 
     def check_repo_dbmap(self):
         """ 根据repo中的数据库检测数据内容书否对应 """
@@ -371,4 +401,4 @@ if __name__ == "__main__":
         mgr.check_repo_dbmap()
     elif args.rebuild:
         assert False, "请更改代码，定义rebuild的操作后，注释当前行再执行命令"
-        mgr._rebuild_format()
+        mgr.rebuild_format()
