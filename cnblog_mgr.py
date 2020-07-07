@@ -93,12 +93,21 @@ class CnblogManager:
             return "https://img2020.cnblogs.com/blog/2039866/202005/2039866-20200525195318772-1131646535.jpg"
 
         file_name = os.path.basename(path_img)
+        # from download_img_link import format_ext
+        # file_name = format_ext(file_name)
         _, suffix = os.path.splitext(file_name)
+
+        try:
+            type_ = self.mime[suffix]
+        except KeyError:
+            logger.error(f"未定义的扩展名类型【{suffix}】，使用默认值'image/jpeg'")
+            type_ = "image/jpeg"
+
         with open(path_img, 'rb') as fp:
             file = {
                 "bits": fp.read(),
                 "name": file_name,
-                "type": self.mime[suffix]
+                "type": type_
             }
         url_new = self.cnblog_server.metaWeblog.newMediaObject(
                     self.dict_conf["blog_id"],

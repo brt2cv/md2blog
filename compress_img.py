@@ -2,7 +2,7 @@
 # @Date    : 2020-05-23
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.0.1
+# @Version : 0.0.2
 
 import os.path
 import pngquant
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     else:
         path = input("\n请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip()
+            path = path.strip().strip('"').strip("'")
             if os.path.exists(path):
                 compress_by_pngquant(path)
             else:

@@ -126,7 +126,7 @@ if __name__ == "__main__":
     else:
         path = input("\n请输入待处理文件path(支持直接拖拽): ")
         while True:
-            path = path.strip().strip('"')
+            path = path.strip().strip('"').strip("'")
             if os.path.exists(path):
                 # png2jpg(path, args.quality)
                 resize(path, ratio=0.8, min_size=10240, max_shape=[888,888])
