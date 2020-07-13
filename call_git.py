@@ -50,10 +50,10 @@ class GitRepo:
     def status(self, type_=None):
         list_lines = run_cmd("git status -s")
         if type_:
-            list_files = self._filter_status(list_lines, type_)
-            return list_files
-        else:
-            return list_lines
+            list_lines = self._filter_status(list_lines, type_)
+
+        list_path = [os.path.join(self.repo_dir, i) for i in list_lines]
+        return list_path
 
     def _filter_status(self, stdout_lines, type_):
         """ git-status是用两位状态表示的 """
@@ -80,9 +80,20 @@ class GitRepo:
 
         return list_files
 
+    def get_repo_relpath(self, path_abs):
+        if path_abs.find(self.repo_dir) >= 0:
+            path_rel = path_abs.split(self.repo_dir, 1)[1]
+            return path_rel.strip("/").strip("\\")
+        else:
+            return path_abs
+
     @switch_dir
     def add(self, list_path):
-        run_cmd('git add "' + '" "'.join(list_path) + '"')
+        """  """
+        if isinstance(list_path, str):
+            list_path = [list_path]
+        list_path_rel = [self.get_repo_relpath(p) for p in list_path]
+        run_cmd('git add "' + '" "'.join(list_path_rel) + '"')
 
     @switch_dir
     def commit(self, message):
@@ -91,8 +102,9 @@ class GitRepo:
             message = datetime.now().strftime('%a, %b %d %H:%M')
         run_cmd(f'git commit -m "{message}"')
 
+    @switch_dir
     def is_status_mixed(self):
-        list_lines = self.status()
+        list_lines = run_cmd("git status -s")
         for line in list_lines:
             # _state = line.split(maxsplit=1)[0]
             _state = line[:2].strip()

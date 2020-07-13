@@ -1,5 +1,7 @@
 .cnblog.json
-note
+note/
+.smms.json
+smms/
 
 **/ui/*[!*.ui]
 **/.vscode/*[!demo/]
