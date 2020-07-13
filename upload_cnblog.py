@@ -21,7 +21,7 @@ def getopt():
     parser.add_argument("-S", "--resize", action="store_true", help="缩放图像")
     parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")
     parser.add_argument("-a", "--auto", action="store_true", help="使用git自动上传cnblog")
-    parser.add_argument("-m", "--smms", action="store_true", help="将内容上传图床")
+    # parser.add_argument("-m", "--smms", action="store_true", help="将内容上传图床")
     return parser.parse_args()
 
 def init_repo(path_dir, path_cnblog_account):
@@ -99,57 +99,6 @@ def upload_cnblog(uploader):
     # git commit, 若无需提交，则Ctrl+C终止程序即可
     commit_message = input("Input commit message [回车默认提交]: ")
     git.commit(commit_message)
-
-def upload_smms(path_conf):
-    from call_git import GitRepo
-    import smms2
-    import json
-
-    with open(path_conf, "r") as fp:
-        dict_conf = json.load(fp)
-        repo_dir = dict_conf["repo_dir"]
-        cmms_token = dict_conf.get("smms_token")
-
-    git = GitRepo(repo_dir)
-    if git.is_status_mixed():
-        print("当前Stage暂存区有文件未更新至最新状态，无法判定用户明确的上传意图，请更新Repo仓库Git状态")
-        return
-
-    list_files = git.status("untracked")
-    # 检查文件格式
-    for file in list_files:
-        assert os.path.splitext(file)[1] in [".jpg", ".png", ".gif"], f"不符合图床格式的文件【{file}】"
-
-    # 上传
-    smms_client = smms2.CMMS_v2(repo_dir, cmms_token)
-
-    def uploading():
-        all_Right = True
-        list_uploaded = []
-        list_untracked = git.status("untracked")
-        assert list_untracked, "不存在需要上传的文件"
-        for path_file in list_untracked:
-            try:
-                smms_client.upload(os.path.abspath(path_file))
-            except smms2.FileExists:
-                all_Right = False
-                path_new = smms2.format_filename(path_file)
-                os.rename(path_file, path_new)
-            except smms2.UploadError:
-                print(f"[-] 文件上传失败【{path_file}】")
-                # all_Right = False
-            else:
-                list_uploaded.append(path_file)
-
-        if list_uploaded:
-            git.add(list_uploaded)
-        return all_Right
-
-    while not uploading():
-        pass
-    smms_client.save_data()
-    git.add(smms_client.path_db)
-    git.commit(message=None)
 
 def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
     from png2jpg import resize
@@ -240,7 +189,6 @@ def check_db_from_cnblog(uploader):
 if __name__ == "__main__":
     args = getopt()
     path_cnblog_account = ".cnblog.json"
-    path_smms_conf = ".smms.json"
 
     # 处理命令行参数
     if args.repo:
@@ -251,8 +199,8 @@ if __name__ == "__main__":
     uploader = CnblogManager(path_cnblog_account)
     if args.auto:
         upload_cnblog(uploader)
-    elif args.smms:
-        upload_smms(path_smms_conf)
+    # elif args.smms:
+    #     upload_smms(path_smms_conf)
     elif args.user:
         info = uploader.get_user_info()
         print(info)
