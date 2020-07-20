@@ -57,7 +57,7 @@ def init_repo(path_dir, path_cnblog_account):
 def upload_cnblog(uploader):
     import os
     # from handle_git import git_status
-    from call_git import GitRepo
+    from util.gitsh import GitRepo
 
     repo_dir = uploader.dict_conf["repo_dir"]
     git = GitRepo(repo_dir)
