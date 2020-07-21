@@ -332,7 +332,7 @@ class DocumentsMgr:
 
     def check_repo_dbmap(self):
         """ 根据repo中的数据库检测数据内容书否对应 """
-        from call_git import GitRepo
+        from util.gitsh import GitRepo
 
         # 获取self.data中的全部路径
         set_db_files = set()
