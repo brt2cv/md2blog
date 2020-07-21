@@ -21,7 +21,6 @@ def getopt():
     parser.add_argument("-S", "--resize", action="store_true", help="缩放图像")
     parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")
     parser.add_argument("-a", "--auto", action="store_true", help="使用git自动上传cnblog")
-    # parser.add_argument("-m", "--smms", action="store_true", help="将内容上传图床")
     return parser.parse_args()
 
 def init_repo(path_dir, path_cnblog_account):
@@ -199,8 +198,6 @@ if __name__ == "__main__":
     uploader = CnblogManager(path_cnblog_account)
     if args.auto:
         upload_cnblog(uploader)
-    # elif args.smms:
-    #     upload_smms(path_smms_conf)
     elif args.user:
         info = uploader.get_user_info()
         print(info)

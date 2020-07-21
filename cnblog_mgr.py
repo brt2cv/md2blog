@@ -253,7 +253,7 @@ class CnblogManager:
             while True:
                 try:
                     self._new_blog(struct_post)
-                except xmlrpc.client.Fault:
+                except xmlrpc.client.Fault as e:
                     # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
                     print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
                     sleep(TIME_FOR_FREQUENCE_LIMIT)
