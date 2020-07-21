@@ -11,8 +11,22 @@ import glob
 from collections import defaultdict
 
 from doc_parser import MarkdownParser, NullMarkdownFile
-from png2jpg import png2smaller, resize
+from util.imgfmt import png2jpg, resize
 
+
+def png2jpg_for_md(path_png):
+    """ 验证png转换后体积明显缩小，
+        否则添加前缀，避免修改后再次上传时重复进行格式转换 """
+    new_file_prefix="keepng_"
+    if os.path.basename(path_png).startswith(new_file_prefix):
+        return path_png
+
+    path_jpg = png2jpg(path_png, 85)
+    if path_jpg == path_png:
+        path_jpg = os.path.join(os.path.dirname(path_png),
+           new_file_prefix + os.path.basename(path_png))
+        os.rename(path_png, path_jpg)
+    return path_jpg
 
 class MarkdownFormatter(MarkdownParser):
 
@@ -125,7 +139,7 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
                 self.modify_text(index, update_line(line))
 
     def download_img(self):
-        from download_img_link import download_src
+        from util.imgfmt import download_src
 
         dict_images = self.get_images("http")
         # 生成图像目录
@@ -135,13 +149,15 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
         self.process_images(dict_images, lambda url: download_src(url, dir_img))
 
     def convert_png2jpg(self):
-        path_rel_start = os.path.dirname(self.file_path)
-        def png2jpg_and_return_relpath(path_png):
-            path_jpg = png2smaller(path_png, 85)
-            return os.path.relpath(path_jpg, path_rel_start)
-
         dict_images = self.get_images("png")
-        self.process_images(dict_images, png2jpg_and_return_relpath)
+
+        def _png2jpg(path_png):
+            path_rel_start = os.path.dirname(self.file_path)
+            path_img = png2jpg_for_md(path_png)
+            rel_path = os.path.relpath(path_jpg, path_rel_start)
+            return rel_path
+
+        self.process_images(dict_images, _png2jpg)
         # 删除原png文件
         # for path_img in dict_images.values():
         #     os.remove(path_img)

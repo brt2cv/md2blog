@@ -100,7 +100,7 @@ def upload_cnblog(uploader):
     git.commit(commit_message)
 
 def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
-    from png2jpg import resize
+    from util.imgfmt import resize
     from glob import glob
 
     ratio = input(f"图像缩放比例 [默认{ratio_default}]: ")
