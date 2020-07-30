@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2020-07-04
+# @Date    : 2020-07-30
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.5
+# @Version : 0.1.6
 
 import os.path
 from collections import OrderedDict
@@ -16,7 +16,7 @@ def getopt():
     parser.add_argument("-c", "--check", action="store_true", help="校正本地数据库")
     parser.add_argument("-u", "--user", action="store_true", help="获取用户博客信息")
     parser.add_argument("-g", "--get", action="store_true", help="获取近期上传的列表")
-    parser.add_argument("-d", "--delete", action="store", help="删除博客文档")
+    parser.add_argument("-d", "--delete", action="store", help="删除博客文档（参数为postid或待删除的path）")
     parser.add_argument("-s", "--save", action="store", help="下载博客文档")
     parser.add_argument("-S", "--resize", action="store_true", help="缩放图像")
     parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")

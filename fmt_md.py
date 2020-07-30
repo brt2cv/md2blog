@@ -146,18 +146,13 @@ keywords    = {list_as_str(self.metadata.get('keywords'))}
         dir_img, _ = os.path.splitext(self.file_path)
         if not os.path.exists(dir_img):
             os.makedirs(dir_img)
-        self.process_images(dict_images, lambda url: download_src(url, dir_img))
+        self.process_images(dict_images, lambda url: os.path.relpath(download_src(url, dir_img),
+                                                            os.path.dirname(self.file_path)))
 
     def convert_png2jpg(self):
         dict_images = self.get_images("png")
-
-        def _png2jpg(path_png):
-            path_rel_start = os.path.dirname(self.file_path)
-            path_img = png2jpg_for_md(path_png)
-            rel_path = os.path.relpath(path_jpg, path_rel_start)
-            return rel_path
-
-        self.process_images(dict_images, _png2jpg)
+        self.process_images(dict_images, lambda path_png: os.path.relpath(png2jpg_for_md(path_png),
+                                                            os.path.dirname(self.file_path)))
         # 删除原png文件
         # for path_img in dict_images.values():
         #     os.remove(path_img)

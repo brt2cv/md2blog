@@ -253,7 +253,7 @@ class CnblogManager:
             while True:
                 try:
                     self._new_blog(struct_post)
-                except xmlrpc.client.Fault as e:
+                except xmlrpc.client.Fault:
                     # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
                     print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
                     sleep(TIME_FOR_FREQUENCE_LIMIT)
@@ -282,9 +282,10 @@ class CnblogManager:
             fp.write(dict_data['description'])
         print(f">> 已下载blog:【{path_save}】")
 
-    def delete_blog(self, postid: str):
-        if not postid.isdecimal():
-            postid = self.get_postid(path=postid)
+    def delete_blog(self, path_file):
+        """ postid: str_id or path_file """
+        # if not postid.isdecimal():
+        postid = self.get_postid(path=path_file)
 
         try:
             self.cnblog_server.blogger.deletePost(
@@ -301,6 +302,9 @@ class CnblogManager:
             print(f">> 已删除blog:【{postid}】")
 
         path_rel = self.db_mgr.data["postids"][postid]
+        dir_md = path_file[:-3]
+        if os.path.exists(dir_md):
+            os.rmdir(dir_md)
         self.db_mgr.remove_doc(path_rel)
 
     def get_recent_post(self, num=9999):
