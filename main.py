@@ -20,6 +20,7 @@ def getopt():
     parser.add_argument("-s", "--save", action="store", help="下载博客文档")
     parser.add_argument("-S", "--resize", action="store_true", help="缩放图像")
     parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")
+    parser.add_argument("-m", "--move", action="store_true", help="使用git记录文件路径变动，并更新至数据库（无需网络操作）")
     parser.add_argument("-a", "--auto", action="store_true", help="使用git自动上传cnblog")
     return parser.parse_args()
 
@@ -131,6 +132,31 @@ def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
     else:
         resize(path, ratio, min_size=0, max_shape=None)
 
+def movefile_db_update(uploader):
+    ok = input("请确认您未修改移动文件的内容，否则可能造成损失 [Y/n]:")  # 要不R识别为D&A，要么commit后，不再触发修改的上传操作
+    if ok.lower() == "n":
+        return
+
+    from util.gitsh import GitRepo
+
+    repo_dir = uploader.dict_conf["repo_dir"]
+    git = GitRepo(repo_dir)
+    if git.is_status_mixed():
+        print("当前Stage暂存区有文件未更新至最新状态，无法判定用户明确的上传意图，请更新Repo仓库Git状态")
+        return
+
+    list_move = git.status("renamed")
+    for couple in list_move:
+        path_old, path_new = couple
+        if path_new[-3:] != ".md":
+            continue
+        try:
+            uploader.db_mgr.move_doc(path_old, path_new)
+            print(f"[+] 已完成数据库更新: {path_old} -> {path_new}")
+        except Exception as e:
+            print(f"[-] 未能成功移动元数据: {path_old}\n", e)
+            # assert False
+
 def check_db_from_cnblog(uploader):
     """ 网络、本地、数据库同步检测:
         + 存在性(postid, title)
@@ -209,6 +235,8 @@ if __name__ == "__main__":
         uploader.delete_blog(args.delete)
     elif args.save:
         uploader.download_blog(args.save)
+    elif args.move:
+        movefile_db_update(uploader)
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
         while True:

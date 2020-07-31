@@ -267,8 +267,23 @@ class DocumentsMgr:
         self._set_structure(path_rel, new_info)
         self.save_data()
 
-    def move_doc(self, path_src, path_dst):
-        raise Exception("尚未开发，敬请期待")
+    def move_doc(self, path_old, path_new):
+        # path_old: 转换为相对路径
+        path_old = os.path.relpath(os.path.abspath(path_old), self.repo_dir)
+        path_new = os.path.relpath(os.path.abspath(path_new), self.repo_dir)
+        doc_info = self.get_structure(path_old)
+        self.data["titles"][doc_info["title"]] = path_new
+
+        for tag in doc_info["tags"]:
+            self.data["tags"][tag].remove(path_old)
+            self.data["tags"][tag].append(path_new)
+
+        self.data["dates"][doc_info["date"]].remove(path_old)
+        self.data["dates"][doc_info["date"]].append(path_new)
+
+        self.data["postids"][doc_info["postid"]] = path_new
+        self._del_structure(path_old)
+        self._set_structure(path_new, doc_info)
         self.save_data()
 
     def get_title_by_path(self, path):
@@ -377,11 +392,14 @@ if __name__ == "__main__":
     def getopt():
         import argparse
 
-        parser = argparse.ArgumentParser("db_mgr", description="仅用于生成db初始化文件")
+        parser = argparse.ArgumentParser("db_mgr", description="""
+* 用于生成db初始化文件: `py db_mgr.py -i ./note/`
+* 用于数据库自检：查询db中，相较于磁盘，缺失或多余的文件（不联网）: `py db_mgr.py -c`
+* 用于根据 `git state -s` 中的rename项迁移文件路径（注意，请勿修改文件内容）: `py db_mgr.py -m`
+""")
         parser.add_argument("-i", "--init", action="store", help="指定Git项目的所在目录，并创建数据库")
-        parser.add_argument("-c", "--selfcheck", action="store_true", help="数据库自检")
-        parser.add_argument("-t", "--target", action="store", default=".cnblog.json", help="数据库目录")
-        parser.add_argument("-b", "--rebuild", action="store_true", help="重构.cnblog.json的structure结构")
+        # parser.add_argument("-c", "--selfcheck", action="store_true", help="数据库自检")
+        # parser.add_argument("-b", "--rebuild", action="store_true", help="重构.cnblog.json的structure结构")
         # parser.add_argument("-r", "--repair", action="store", help="修复数据库内容")
         return parser.parse_args()
 
@@ -389,16 +407,19 @@ if __name__ == "__main__":
     if args.init:
         DocumentsMgr.template_data(os.path.realpath(args.init))
         exit()
+    # else:
+    # 默认读取.cnblog.json获取note目录
 
-    # assert args.target, f"请输入-t选项用于指定cnblog.json所在目录"
-    with open(args.target, "r") as fp:
-        dict_conf = json.load(fp)
+    # path_cnblog_conf = ".cnblog.json"
+    # with open(path_cnblog_conf, "r") as fp:
+    #     dict_conf = json.load(fp)
 
-    repo_dir = dict_conf["repo_dir"]
-    mgr = DocumentsMgr(repo_dir)
+    # repo_dir = dict_conf["repo_dir"]
+    # mgr = DocumentsMgr(repo_dir)
 
-    if args.selfcheck:
-        mgr.check_repo_dbmap()
-    elif args.rebuild:
-        assert False, "请更改代码，定义rebuild的操作后，注释当前行再执行命令"
-        mgr.rebuild_format()
+    # if args.selfcheck:
+    #     assert False, "请使用 'python3 main.py -c' 来比对数据库"
+    #     mgr.check_repo_dbmap()
+    # elif args.rebuild:
+    #     assert False, "请更改代码，定义rebuild的操作后，注释当前行再执行命令"
+    #     mgr.rebuild_format()
