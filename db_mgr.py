@@ -230,6 +230,8 @@ class DocumentsMgr:
         for tag in doc_info["tags"]:
             self.data["tags"][tag].remove(path_rel)
         self.data["dates"][doc_info["date"]].remove(path_rel)
+        if not self.data["dates"][doc_info["date"]]:
+            del self.data["dates"][doc_info["date"]]
         del self.data["postids"][doc_info["postid"]]
         self._del_structure(path_rel)
         self.save_data()
@@ -260,6 +262,8 @@ class DocumentsMgr:
                 self.data["tags"][tag].append(path_rel)
 
         self.data["dates"][old_info["date"]].remove(path_rel)
+        if not self.data["dates"][old_info["date"]]:
+            del self.data["dates"][old_info["date"]]
         if new_info["date"] not in self.data["dates"]:
             self.data["dates"][new_info["date"]] = []
         self.data["dates"][new_info["date"]].append(path_rel)
