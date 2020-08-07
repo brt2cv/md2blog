@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2020-07-31
+# @Date    : 2020-08-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 1.0.2
+# @Version : 1.0.3
 
 import os
 import subprocess
@@ -52,43 +52,32 @@ class GitRepo:
         list_lines = run_cmd("git status -s")
         if type_:
             list_lines = self._filter_status(list_lines, type_)
-        return list_lines
+
+        list_path = [os.path.join(self.repo_dir, i) for i in list_lines]
+        return list_path
 
     def _filter_status(self, stdout_lines, type_):
         """ git-status是用两位状态表示的 """
         list_files = []
-        is_filt_renamed = type_ == "renamed"
-
-        type_according_to = lambda state_mixed: {
-            "untracked"         : state_mixed == "??",
-            "added"             : state_mixed[0] != " ",
-            "unadded"           : state_mixed[1] != " ",  # AM, MM, AD
-            "new_added"         : state_mixed[0] == "A",  # A_
-            "new_unadded"       : state_mixed[1] == "A",  # A_
-            "modified_added"    : state_mixed[0] == "M",
-            "modified_unadded"  : state_mixed[1] == "M",  # MM, AM, _M
-            "deleted_added"     : state_mixed[0] == "D",
-            "deleted_unadded"   : state_mixed[1] == "D",
-            "renamed"           : state_mixed[0] == "R"
-        }[type_]
-
-        get_clean_path = lambda str_path: os.path.join(self.repo_dir, str_path.strip('"'))
-
         for line in stdout_lines:
-            _, path_file = line.split(maxsplit=1)
+            _state, path_file = line.split(maxsplit=1)
             state_mixed = line[:2]
 
-            is_type = type_according_to(state_mixed)
-            if not is_type:
-                continue
-
-            if is_filt_renamed:
-                couple_rename = []
-                for _path in path_file.split(' -> '):
-                    couple_rename.append(get_clean_path(_path))
-                list_files.append(couple_rename)
-            else:
-                list_files.append(get_clean_path(path_file))
+            path_file = path_file.strip('"')  # 去除对路径的双引号
+            checking = {
+                "untracked"         : state_mixed == "??",
+                "added"             : state_mixed[0] != " ",
+                "unadded"           : state_mixed[1] != " ",  # AM, MM, AD
+                "new_added"         : state_mixed[0] == "A",  # A_
+                "new_unadded"       : state_mixed[1] == "A",  # A_
+                "modified_added"    : state_mixed[0] == "M",
+                "modified_unadded"  : state_mixed[1] == "M",  # MM, AM, _M
+                "deleted_added"     : state_mixed[0] == "D",
+                "deleted_unadded"   : state_mixed[1] == "D",
+                # "renamed"   : "R" == state,
+            }[type_]
+            if checking:
+                list_files.append(path_file)
 
         return list_files
 
@@ -101,11 +90,17 @@ class GitRepo:
 
     @switch_dir
     def add(self, list_path):
-        """  """
         if isinstance(list_path, str):
             list_path = [list_path]
         list_path_rel = [self.get_repo_relpath(p) for p in list_path]
         run_cmd('git add "' + '" "'.join(list_path_rel) + '"')
+
+    @switch_dir
+    def reset(self, list_path):
+        if isinstance(list_path, str):
+            list_path = [list_path]
+        list_path_rel = [self.get_repo_relpath(p) for p in list_path]
+        run_cmd('git reset "' + '" "'.join(list_path_rel) + '"')
 
     @switch_dir
     def commit(self, message):

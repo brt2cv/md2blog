@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-# @Date    : 2020-07-21
+# @Date    : 2020-08-07
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
+# @Version : 0.1.3
 
 import os
-from PIL import Image
+import subprocess
+from glob import glob
 
+from PIL import Image
 import pngquant
 from . import jhead
 
@@ -79,8 +82,12 @@ def _png2jpg_base(path_png, quality):
     im = Image.open(path_png)  # rgba
     im_rgb = im.convert(mode="RGB")
     im_rgb.save(path_new, quality=quality)
-    print("___", path_new)
     return path_new
+
+def _png2jpg_byMogrify(path_png):
+    subprocess.run("mogrify -format jpg {}".format(path_png), shell=True)
+    path_base, _ = os.path.splitext(path_png)
+    return path_base + ".jpg"
 
 def png2jpg(path_png, quality, least_ratio=0.75, removePng=True):
     """ png2jpg_base()未考虑转换结果。
@@ -125,14 +132,22 @@ def png2jpg(path_png, quality, least_ratio=0.75, removePng=True):
 
 #####################################################################
 
+COMPRESS_ALLOWED_EXT = ["png", "jpg", "jpeg"]
+COMPRESS_ALLOWED_EXT.extend([ext.upper() for ext in COMPRESS_ALLOWED_EXT])
+
 def compress_by_pngquant(path_img):
     """ png32转png8，直接替换原文件 """
     pngquant.config(min_quality=85, max_quality=95)  # "/usr/bin/pngquant", min_quality=60, max_quality=90
 
     if os.path.isdir(path_img):
-        pngquant.quant_dir(dir=path_img, override=True, delete=0)
+        # pngquant.quant_dir(dir=path_img, override=True, delete=0)
+        for ext in COMPRESS_ALLOWED_EXT:
+            for path_ in glob(r"{}/**/*.{}".format(path_img, ext), recursive=True):
+                pngquant.quant_image(path_, override=True, delete=True)
     else:
-        pngquant.quant_image(path_img, override=True, delete=True)
+        _, ext = os.path.splitext(path_img)
+        if ext and ext[1:] in COMPRESS_ALLOWED_EXT:
+            pngquant.quant_image(path_img, override=True, delete=True)
 
 #####################################################################
 

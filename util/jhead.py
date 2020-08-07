@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2020-07-18
+# @Date    : 2020-08-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
+# @Version : 1.0.3
 
 import subprocess
 
@@ -33,12 +34,12 @@ def clear_comment(path_jpg):
     return stdout_
 
 def get_comment(path_jpg):
-    stdout_ = run_cmd(r"jhead -se %s|grep Comment|awk '{print $3}' " % path_jpg)
+    stdout_ = run_cmd(r'jhead -se "%s"|grep Comment|awk "{print $3}" ' % path_jpg)
     if stdout_:
         return stdout_[0]
 
 def get_resolution(path_jpg):
-    stdout_ = run_cmd(r"jhead -se %s|grep Resolution " % path_jpg)
+    stdout_ = run_cmd(r'jhead -se "%s"|grep Resolution ' % path_jpg)
     if stdout_:
         str_resolution = stdout_[0].split(": ")[1]
         return [int(x) for x in str_resolution.split(" x ")]
