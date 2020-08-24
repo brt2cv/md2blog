@@ -16,7 +16,8 @@ def getopt():
     parser.add_argument("-c", "--check", action="store_true", help="校正本地数据库")
     parser.add_argument("-u", "--user", action="store_true", help="获取用户博客信息")
     parser.add_argument("-g", "--get", action="store_true", help="获取近期上传的列表")
-    parser.add_argument("-d", "--delete", action="store", help="删除博客文档（参数为postid或待删除的path）")
+    parser.add_argument("-d", "--html2md", action="store_true", help="爬取html为markdown")
+    parser.add_argument("-D", "--delete", action="store", help="删除博客文档（参数为postid或待删除的path）")
     parser.add_argument("-s", "--save", action="store", help="下载博客文档")
     parser.add_argument("-S", "--resize", action="store_true", help="缩放图像")
     parser.add_argument("-p", "--pull_img", action="store_true", help="下载博客中链接的http图像")
@@ -99,6 +100,30 @@ def upload_cnblog(uploader):
     # git commit, 若无需提交，则Ctrl+C终止程序即可
     commit_message = input("Input commit message [回车默认提交]: ")
     git.commit(commit_message)
+
+
+Html2MarkdownEngine = None
+
+def html2markdown(url, save_dir):
+    global Html2MarkdownEngine
+
+    import urllib.request as urllib
+    from util import html2text
+    if not Html2MarkdownEngine:
+        Html2MarkdownEngine = html2text.HTML2Text()
+
+    j = urllib.urlopen(url)
+    data_body = j.read()
+    data_utf8 = data_body.decode("utf-8")
+
+    md = Html2MarkdownEngine.handle(data_utf8)
+    assert md, "解析错误，未转换成Markdown格式文本"
+
+    title = data_utf8.split('<title>')[1].split('</title>')[0]
+    path_save = os.path.join(save_dir, title + ".md")
+    with open(path_save, "w", encoding="utf8") as fp:
+        fp.write(md)
+    print(f"[+] 已存储Markdown至【{path_save}】")
 
 def resize_imgs(path, ratio_default, min_size_default, max_shape_default):
     from util.imgfmt import resize
@@ -239,6 +264,18 @@ if __name__ == "__main__":
         movefile_db_update(uploader)
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
+        if args.html2md:
+            tmp_dir = os.path.join(uploader.dict_conf["repo_dir"], "download")
+            if not os.path.exists(tmp_dir):
+                os.mkdir(tmp_dir)
+        elif args.resize:
+            ratio = input("请输入默认的缩放比例【默认0.6】: ")
+            if not ratio:
+                ratio = "0.6"
+            elif ratio[0] == ".":
+                ratio = "0" + ratio
+            ratio = float(ratio)
+
         while True:
             path = path.strip().strip('"').strip("'")
             try:
@@ -246,9 +283,11 @@ if __name__ == "__main__":
                     uploader.pull_img(path)
                     uploader.md_fmt.convert_png2jpg()
                     uploader.md_fmt.overwrite()
+                elif args.html2md:
+                    html2markdown(path, tmp_dir)
                 elif args.resize:
                     resize_imgs(path,
-                                ratio_default=0.6,
+                                ratio_default=ratio,
                                 min_size_default=10,
                                 max_shape_default=670)
                 else:
