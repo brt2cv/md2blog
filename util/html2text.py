@@ -454,7 +454,8 @@ class HTML2Text(HTMLParser.HTMLParser):
                 # handle some font attributes, but leave headers clean
                 self.handle_emphasis(start, tag_style, parent_style)
 
-        if tag in ["code", "tt"] and not self.pre: self.o('`') #TODO: `` `this` ``
+        if tag in ["code", "tt"] and not self.pre:
+            self.o('`')  # TODO: `` `this` ``
         if tag == "abbr":
             if start:
                 self.abbr_title = None
@@ -497,7 +498,7 @@ class HTML2Text(HTMLParser.HTMLParser):
             if has_key(attrs, 'src'):
                 attrs['href'] = attrs['src']
                 alt = attrs.get('alt', '')
-                self.o("![" + escape_md(alt) + "]")
+                self.o("  " * self.p_p + "![" + escape_md(alt) + "]")
 
                 if self.inline_links:
                     self.o("(" + escape_md(attrs['href']) + ")")
