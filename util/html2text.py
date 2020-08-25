@@ -92,8 +92,8 @@ for k in unifiable.keys():
 def onlywhite(line):
     """Return true if the line does only consist of whitespace characters."""
     for c in line:
-        if c is not ' ' and c is not '  ':
-            return c is ' '
+        if c != ' ' and c != '  ':
+            return c == ' '
     return line
 
 def hn(tag):
@@ -105,7 +105,7 @@ def hn(tag):
 
 def dumb_property_dict(style):
     """returns a hash of css attributes"""
-    return dict([(x.strip(), y.strip()) for x, y in [z.split(':', 1) for z in style.split(';') if ':' in z]]);
+    return dict([(x.strip(), y.strip()) for x, y in [z.split(':', 1) for z in style.split(';') if ':' in z]])
 
 def dumb_css_parser(data):
     """returns a hash of css selectors, each of which contains a hash of css attributes"""
@@ -299,9 +299,9 @@ class HTML2Text(HTMLParser.HTMLParser):
 
             if has_key(a, 'href') and a['href'] == attrs['href']:
                 if has_key(a, 'title') or has_key(attrs, 'title'):
-                        if (has_key(a, 'title') and has_key(attrs, 'title') and
-                            a['title'] == attrs['title']):
-                            match = True
+                    if (has_key(a, 'title') and has_key(attrs, 'title') and
+                        a['title'] == attrs['title']):
+                        match = True
                 else:
                     match = True
 
@@ -370,7 +370,7 @@ class HTML2Text(HTMLParser.HTMLParser):
                     self.o(self.emphasis_mark)
             # space is only allowed after *all* emphasis marks
             if (bold or italic) and not self.emphasis:
-                    self.o(" ")
+                self.o(" ")
             if strikethrough:
                 self.quiet -= 1
 
@@ -389,7 +389,7 @@ class HTML2Text(HTMLParser.HTMLParser):
             parent_style = {}
             if start:
                 if self.tag_stack:
-                  parent_style = self.tag_stack[-1][2]
+                    parent_style = self.tag_stack[-1][2]
                 tag_style = element_style(attrs, self.style_def, parent_style)
                 self.tag_stack.append((tag, attrs, tag_style))
             else:
@@ -604,7 +604,7 @@ class HTML2Text(HTMLParser.HTMLParser):
                 if not self.list:
                     bq += "    "
                 #else: list content is already partially indented
-                for i in range(len(self.list)):
+                for _ in range(len(self.list)):
                     bq += "    "
                 data = data.replace("\n", "\n"+bq)
 
@@ -654,6 +654,7 @@ class HTML2Text(HTMLParser.HTMLParser):
                     self.out("  *[" + abbr + "]: " + definition + "\n")
 
             self.p_p = 0
+            # print(">>", data)
             self.out(data)
             self.outcount += 1
 
@@ -890,7 +891,8 @@ def main():
     else:
         data = sys.stdin.read()
 
-    data = data.decode(encoding)
+    if not isinstance(data, str):
+        data = data.decode(encoding)
     h = HTML2Text(baseurl=baseurl)
     # handle options
     if options.ul_style_dash: h.ul_item_mark = '-'
