@@ -788,11 +788,13 @@ def skipwrap(para):
     # If the text begins with only two "--", possibly preceded by whitespace, that's
     # an emdash; so wrap.
     stripped = para.lstrip()
-    if stripped[0:2] == "--" and len(stripped) > 2 and stripped[2] != "-":
+    if stripped[:2] == "![":  # ![](xxx.img)
+        return True
+    if stripped[:2] == "--" and len(stripped) > 2 and stripped[2] != "-":
         return False
     # I'm not sure what this is for; I thought it was to detect lists, but there's
     # a <br>-inside-<span> case in one of the tests that also depends upon it.
-    if stripped[0:1] == '-' or stripped[0:1] == '*':
+    if stripped[0] == '-' or stripped[0] == '*':
         return True
     # If the text begins with a single -, *, or +, followed by a space, or an integer,
     # followed by a ., followed by a space (in either case optionally preceeded by
