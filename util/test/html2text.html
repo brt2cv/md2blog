@@ -1,0 +1,26 @@
+<ul>
+<li>
+<p>使用 <code>PostWoman</code> 测试API</p>
+<p><img src="https://img2020.cnblogs.com/blog/2039866/202007/2039866-20200708202948709-147739159.jpg" alt="" loading="lazy"> <!-- tornado-rest/tornado-rest-0.jpg --></p>
+</li>
+<li>
+<p>使用 <code>httplib</code> 发起请求</p>
+<pre><code class="language-py hljs python"><span class="hljs-keyword">import</span> http.client <span class="hljs-keyword">as</span> httplib
+<span class="hljs-keyword">import</span> urllib.parse <span class="hljs-keyword">as</span> urllib
+
+params  = urllib.urlencode({<span class="hljs-string">'name_customer'</span>:name_customer,<span class="hljs-string">'address_customer'</span>:address_customer})
+headers = {<span class="hljs-string">"Content-Type"</span>: <span class="hljs-string">"application/x-www-form-urlencoded"</span>}
+conn    = httplib.HTTPConnection(<span class="hljs-string">"localhost:8080"</span>)
+
+conn.request(<span class="hljs-string">'POST'</span>,<span class="hljs-string">'/customer'</span>,params,headers)
+
+resp = conn.getresponse()
+data = resp.read()
+<span class="hljs-keyword">if</span> resp.status == <span class="hljs-number">200</span>:
+    json_data = json.loads(data.decode(<span class="hljs-string">'utf-8'</span>))
+    print(json_data)
+<span class="hljs-keyword">else</span>:
+    print(data)
+</code></pre>
+</li>
+</ul>

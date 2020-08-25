@@ -28,12 +28,11 @@ except ImportError: #Python3
     import html.parser as HTMLParser
 try: #Python3
     import urllib.request as urllib
-except:
+except ImportError:
     import urllib
-import optparse, re, sys, codecs, types
 
-try: from textwrap import wrap
-except: pass
+import re, sys, codecs
+# from textwrap import wrap
 
 # Use Unicode characters instead of their ascii psuedo-replacements
 UNICODE_SNOB = 0
@@ -589,7 +588,7 @@ class HTML2Text(HTMLParser.HTMLParser):
                     self.drop_white_space = 0
 
             if puredata and not self.pre:
-                data = re.sub('\s+', ' ', data)
+                data = re.sub(r'\s+', ' ', data)
                 if data and data[0] == ' ':
                     self.space = 1
                     data = data[1:]
@@ -726,18 +725,19 @@ class HTML2Text(HTMLParser.HTMLParser):
             nest_count = int(style['margin-left'][:-2]) / self.google_list_indent
         return nest_count
 
+
     def optwrap(self, text):
         """Wrap all paragraphs in the provided text."""
         if not self.body_width:
             return text
 
-        assert wrap, "Requires Python 2.3."
         result = ''
         newlines = 0
         for para in text.split("\n"):
             if len(para) > 0:
                 if not skipwrap(para):
-                    result += "\n".join(wrap(para, self.body_width))
+                    # result += "\n".join(wrap(para, self.body_width))
+                    result += para
                     if para.endswith('  '):
                         result += "  \n"
                         newlines = 1
@@ -838,8 +838,9 @@ def escape_md_section(text, snob=False):
 
 
 def main():
-    baseurl = ''
+    import optparse
 
+    baseurl = ''
     p = optparse.OptionParser('%prog [(filename|url) [encoding]]',
                               version='%prog ' + __version__)
     p.add_option("--ignore-emphasis", dest="ignore_emphasis", action="store_true",
