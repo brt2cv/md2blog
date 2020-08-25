@@ -194,14 +194,16 @@ Body text...
 
 - [x] 实现对多余图像的挑选和删除
 - [x] 对于分辨率过高的图像进行resize操作
-- [ ] 实现git_rename、git_move操作
+- [x] 实现git_rename、git_move操作
 - [x] 已上传图像的link需要再次验证上传
-- [ ] 实现从cnblog获取database，更新本地json数据库
+- [x] 实现从cnblog获取database，更新本地json数据库
+- [x] 通过url下载html并转换为MarkDown格式
 
 ## Buglist
 
 + 通过上传md时，在post_struct["categories"]增加"[文章分类]"，无法解决上传作为“文章”类型的问题。暂时没有方式可以实现该需求。
 + 目前cnblog不支持webp的动图格式，但测试webp比gif压缩率更高；所以建议手动转换webp -> gif，上传cnblog后，源文档 `<!-- 注释 xxx.webp -->` 保留并git存储webp原图和gif转换图。
++ html2text使用空格缩进来处理 `<code>` ，容易实现但无法体现代码语言类型，需要改成反引号的格式。
 
 ## 寻求帮助
 
