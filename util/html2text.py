@@ -574,6 +574,8 @@ class HTML2Text(HTMLParser.HTMLParser):
         self.br_toggle = '  '
 
     def o(self, data, puredata=0, force=0):
+        # print(">> output::data: ", data, len(data), puredata, force)
+        # print("-- list:{}, pre:{}, start:{}, startpre:{}, lastWasList:{}".format(self.list, self.pre, self.start, self.startpre, self.lastWasList))
         if self.abbr_data is not None:
             self.abbr_data += data
 
@@ -612,7 +614,8 @@ class HTML2Text(HTMLParser.HTMLParser):
             if self.startpre:
                 self.startpre = 0
                 if self.list:
-                    data = data.lstrip("\n") # use existing initial indentation
+                    # data = data.lstrip("\n") # use existing initial indentation
+                    self.out("\n")
 
             if self.start:
                 self.space = 0
@@ -722,7 +725,6 @@ class HTML2Text(HTMLParser.HTMLParser):
         if 'margin-left' in style:
             nest_count = int(style['margin-left'][:-2]) / self.google_list_indent
         return nest_count
-
 
     def optwrap(self, text):
         """Wrap all paragraphs in the provided text."""
