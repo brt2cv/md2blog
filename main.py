@@ -101,22 +101,14 @@ def upload_cnblog(uploader):
     commit_message = input("Input commit message [回车默认提交]: ")
     git.commit(commit_message)
 
-
-Html2MarkdownEngine = None
-
+# Html2MarkdownEngine = html2md.HTML2Text()
 def html2markdown(url, save_dir):
-    global Html2MarkdownEngine
-
-    import urllib.request as urllib
-    from util import html2text
-    if not Html2MarkdownEngine:
-        Html2MarkdownEngine = html2text.HTML2Text()
-
     j = urllib.urlopen(url)
     data_body = j.read()
     data_utf8 = data_body.decode("utf-8")
 
-    md = Html2MarkdownEngine.handle(data_utf8)
+    html_parser = html2md.HTML2Text()
+    md = html_parser.handle(data_utf8)
     assert md, "解析错误，未转换成Markdown格式文本"
 
     title = data_utf8.split('<title>')[1].split('</title>')[0]
@@ -265,6 +257,9 @@ if __name__ == "__main__":
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
         if args.html2md:
+            import urllib.request as urllib
+            from util import html2md
+
             tmp_dir = os.path.join(uploader.dict_conf["repo_dir"], "download")
             if not os.path.exists(tmp_dir):
                 os.mkdir(tmp_dir)
