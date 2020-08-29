@@ -37,6 +37,8 @@ def resize(path_src, ratio=0.5, output_shape=None, min_size=0, max_shape=None,
     resample = Image.ANTIALIAS if antialias else Image.NEAREST
 
     im = Image.open(path_src)
+    if im.mode == "RGBA" and save_as_jpg:
+        im = im.convert("RGB")
 
     if output_shape:
         w, h = output_shape
