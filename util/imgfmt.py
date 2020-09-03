@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2020-08-07
+# @Date    : 2020-09-03
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.3
+# @Version : 0.1.4
 
 import os
 import subprocess
@@ -87,7 +87,7 @@ def _png2jpg_base(path_png, quality):
     return path_new
 
 def _png2jpg_byMogrify(path_png):
-    subprocess.run("mogrify -format jpg {}".format(path_png), shell=True)
+    subprocess.run("mogrify -format jpg {}".format(path_png), shell=True, check=True)
     path_base, _ = os.path.splitext(path_png)
     return path_base + ".jpg"
 
@@ -110,6 +110,24 @@ def png2jpg(path_png, quality, least_ratio=0.75, removePng=True):
     if removePng:
         os.remove(path_png)
     return ret
+
+def webp2png_byDwebp(path_webp, path_new=None):
+    if not path_new:
+        path_new, _ = os.path.splitext(path_webp)
+        path_new += ".png"
+
+    subprocess.run("dwebp {} -o {}".format(path_webp, path_new), shell=True, check=True)
+
+def webp2jpg_byPIL(path_webp, path_new=None, quality=85):
+    if not path_new:
+        path_new, _ = os.path.splitext(path_webp)
+        path_new += ".jpg"
+
+    im = Image.open(path_webp)  # rgba
+    # print(">>> webp file mode is:", im.mode)
+    im.save(path_new, "JPEG", quality=quality)
+
+webp2jpg = webp2jpg_byPIL
 
 # def png_to_jpg_mask(pngPath, quality):
 #     im = Image.open(pngPath)

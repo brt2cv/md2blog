@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2020-07-21
+# @Date    : 2020-09-03
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.1
+# @Version : 0.2.1
 
 import os.path
 from util import imgfmt
@@ -16,10 +16,11 @@ def getopt():
 
     parser = argparse.ArgumentParser("ImgFormatter.py", description="图像格式转换工具")
     parser.add_argument("-p", "--path", action="store", help="解析文件路径，可以是文件或目录")
+    parser.add_argument("-s", "--resize", action="store", type=float, help="图像缩放比例，默认0.6")
     parser.add_argument("-c", "--compress", action="store_true", help="使用pngquant压缩图像")
     parser.add_argument("-u", "--url_download", action="store_true", help="下载图片，请通过'--path'输入图像的URL")
     parser.add_argument("-j", "--png2jpg", action="store", type=int, help="设置png2jpg转换时的jpg图像质量，默认85")
-    parser.add_argument("-s", "--resize", action="store", type=float, help="图像缩放比例，默认0.6")
+    parser.add_argument("-w", "--webp2jpg", action="store_true", help="将webp图像转换为jpg")
     return parser.parse_args()
 
 
@@ -29,6 +30,8 @@ if __name__ == "__main__":
     def switch_opt(args, path_img):
         if args.png2jpg:
             imgfmt.png2jpg(path_img, args.png2jpg)
+        elif args.webp2jpg:
+            imgfmt.webp2jpg(path_img)
         elif args.resize:
             imgfmt.resize(path, ratio=args.resize, min_size=10240)  #  max_shape=[888,888]
         elif args.compress:

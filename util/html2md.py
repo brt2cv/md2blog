@@ -791,6 +791,8 @@ def skipwrap(para):
     # If the text begins with only two "--", possibly preceded by whitespace, that's
     # an emdash; so wrap.
     stripped = para.lstrip()
+    if not stripped:
+        return True
     if stripped[:2] == "![":  # ![](xxx.img)
         return True
     if stripped[:2] == "--" and len(stripped) > 2 and stripped[2] != "-":
