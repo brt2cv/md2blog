@@ -253,10 +253,16 @@ class CnblogManager:
             while True:
                 try:
                     self._new_blog(struct_post)
-                except xmlrpc.client.Fault:
-                    # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
-                    print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
-                    sleep(TIME_FOR_FREQUENCE_LIMIT)
+                except xmlrpc.client.Fault as e:
+                    err_type = str(e).split(':', 1)[0]
+                    if err_type == "<Fault 500":
+                        # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
+                        print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
+                        sleep(TIME_FOR_FREQUENCE_LIMIT)
+                    elif err_type == "<Fault 0":
+                        raise Exception("数据格式错误，文档中是否存在'<xxx>'等类似标签字符？")
+                    else:
+                        raise Exception(f"未知的上传问题: {e}")
                 else:
                     break
 
