@@ -25,6 +25,17 @@ def getopt():
     parser.add_argument("-a", "--auto", action="store_true", help="使用git自动上传cnblog")
     return parser.parse_args()
 
+def path_str2list(path_str):
+    path = path_str.strip()
+    for q in ["\"", "\'"]:
+        multi_files_gap = "{0} {0}".format(q)
+        if path.find(multi_files_gap) >= 0:
+            list_args = path.split(multi_files_gap)
+            # break
+            return [path.strip(q) for path in list_args]
+
+    return [path.strip("\"").strip("\'")]
+
 def init_repo(path_dir, path_cnblog_account):
     import json
     from db_mgr import DocumentsMgr
@@ -272,23 +283,23 @@ if __name__ == "__main__":
             ratio = float(ratio)
 
         while True:
-            path = path.strip().strip('"').strip("'")
-            try:
-                if args.pull_img:
-                    uploader.pull_img(path)
-                    uploader.md_fmt.convert_png2jpg()
-                    uploader.md_fmt.overwrite()
-                elif args.html2md:
-                    html2markdown(path, tmp_dir)
-                elif args.resize:
-                    resize_imgs(path,
-                                ratio_default=ratio,
-                                min_size_default=10,
-                                max_shape_default=670)
-                else:
-                    uploader.post_blog(path)
-            except FileNotFoundError as e:
-                print(e)
+            for path in path_str2list(path):
+                try:
+                    if args.pull_img:
+                        uploader.pull_img(path)
+                        uploader.md_fmt.convert_png2jpg()
+                        uploader.md_fmt.overwrite()
+                    elif args.html2md:
+                        html2markdown(path, tmp_dir)
+                    elif args.resize:
+                        resize_imgs(path,
+                                    ratio_default=ratio,
+                                    min_size_default=10,
+                                    max_shape_default=670)
+                    else:
+                        uploader.post_blog(path)
+                except FileNotFoundError as e:
+                    print(e)
 
             path = input("继续输入path，按[Q]退出: ")
             if path.lower() == "q":
