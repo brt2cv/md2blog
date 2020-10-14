@@ -237,13 +237,15 @@ class CnblogManager:
         md_parser.overwrite()
 
         if self._is_article(path_md):
-            md_parser.metadata["categories"] = ["[文章分类]"+c for c in md_parser.metadata["categories"]]
+            # 貌似没有用 ??
+            md_parser.metadata["categories"] = ["[文章分类]"] + md_parser.metadata["categories"]
 
         blog_title = self.md_fmt.make_title()
         struct_post = {
             "title": blog_title,
             "categories": ["[Markdown]"] + md_parser.metadata["categories"],
-            "description": "".join(md_parser.get_text())
+            "description": "".join(md_parser.get_text()),
+            'mt_keywords': ",".join(md_parser.metadata["tags"])
         }
 
         postid = self.get_postid(path=self.md_fmt.file_path)
