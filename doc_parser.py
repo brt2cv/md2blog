@@ -59,6 +59,12 @@ class MarkdownParser:
     def set_ignore_websites(self, list_ignore):
         self.ignore_websites = list_ignore
 
+    def get_title(self):
+        return self.metadata["title"] or self.metadata["description"]
+
+    def get_weight(self):
+        return self.metadata["weight"]
+
     def get_text(self):
         return self.__text_lines
 
