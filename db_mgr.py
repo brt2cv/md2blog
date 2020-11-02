@@ -7,6 +7,9 @@
 import os
 import json
 from pathlib import Path
+from logging import getLogger
+
+logger = getLogger(__file__)
 
 
 class DocumentsMgr:
@@ -228,8 +231,14 @@ class DocumentsMgr:
         doc_info = self.get_structure(path_rel)
         del self.data["titles"][doc_info["title"]]
         for tag in doc_info["tags"]:
-            if path_rel in self.data["tags"][tag]:
-                self.data["tags"][tag].remove(path_rel)
+            tag_files = self.data["tags"].get(tag)
+            if not tag_files:
+                logger.warning(f"[-] 不存在【{tag}】标签，无法处理标签内容")
+                continue
+            if path_rel in tag_files:
+                tag_files.remove(path_rel)
+            if not tag_files:
+                del self.data["tags"][tag]
 
         if path_rel in self.data["dates"][doc_info["date"]]:
             self.data["dates"][doc_info["date"]].remove(path_rel)
@@ -256,9 +265,13 @@ class DocumentsMgr:
 
         if set(old_info["tags"]) != set(new_info["tags"]):
             for tag in set(old_info["tags"]) - set(new_info["tags"]):
-                if path_rel in self.data["tags"][tag]:
-                    self.data["tags"][tag].remove(path_rel)
-                if not self.data["tags"][tag]:
+                tag_files = self.data["tags"].get(tag)
+                if not tag_files:
+                    logger.warning(f"[-] 不存在【{tag}】标签，无法处理标签内容")
+                    continue
+                if path_rel in tag_files:
+                    tag_files.remove(path_rel)
+                if not tag_files:
                     del self.data["tags"][tag]
             for tag in set(new_info["tags"]) - set(old_info["tags"]):
                 if tag not in self.data["tags"]:
