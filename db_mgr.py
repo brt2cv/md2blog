@@ -234,8 +234,17 @@ class DocumentsMgr:
         doc_info = self.get_structure(path_rel)
         del self.data["titles"][doc_info["title"]]
         for tag in doc_info["tags"]:
-            self.data["tags"][tag].remove(path_rel)
-        self.data["dates"][doc_info["date"]].remove(path_rel)
+            tag_files = self.data["tags"].get(tag)
+            if not tag_files:
+                logger.warning(f"[-] 不存在【{tag}】标签，无法处理标签内容")
+                continue
+            if path_rel in tag_files:
+                tag_files.remove(path_rel)
+            if not tag_files:
+                del self.data["tags"][tag]
+
+        if path_rel in self.data["dates"][doc_info["date"]]:
+            self.data["dates"][doc_info["date"]].remove(path_rel)
         if not self.data["dates"][doc_info["date"]]:
             del self.data["dates"][doc_info["date"]]
         del self.data["postids"][doc_info["postid"]]
@@ -263,7 +272,8 @@ class DocumentsMgr:
                 if not tag_files:
                     logger.warning(f"[-] 不存在【{tag}】标签，无法处理标签内容")
                     continue
-                tag_files.remove(path_rel)
+                if path_rel in tag_files:
+                    tag_files.remove(path_rel)
                 if not tag_files:
                     del self.data["tags"][tag]
             for tag in set(new_info["tags"]) - set(old_info["tags"]):
@@ -271,7 +281,8 @@ class DocumentsMgr:
                     self.data["tags"][tag] = []
                 self.data["tags"][tag].append(path_rel)
 
-        self.data["dates"][old_info["date"]].remove(path_rel)
+        if path_rel in self.data["dates"][old_info["date"]]:
+            self.data["dates"][old_info["date"]].remove(path_rel)
         if not self.data["dates"][old_info["date"]]:
             del self.data["dates"][old_info["date"]]
         if new_info["date"] not in self.data["dates"]:
