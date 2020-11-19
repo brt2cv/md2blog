@@ -13,7 +13,7 @@ logger = getLogger(__file__)
 
 
 class DocumentsMgr:
-    default_conf = ".database.json"
+    default_conf = "database.yml"
 
     def __init__(self, repo_dir):
         self.repo_dir = repo_dir
