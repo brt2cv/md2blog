@@ -30,7 +30,7 @@ class DocumentsMgr:
     def template_data(cls, repo_dir):
         conf_data = {
             "dir_essay": "programming",
-            "dir_article": "articles",
+            # "dir_article": "articles",
 
             "structure": {
             # "programming": {

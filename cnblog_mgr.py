@@ -153,9 +153,6 @@ class CnblogManager:
         assert os.path.isabs(path_md)
         assert path_md.find(os.path.abspath(self.db_mgr.repo_dir)) == 0
 
-        essay_dirname = self.db_mgr.data["dir_essay"]
-        article_dirname = self.db_mgr.data["dir_article"]
-
         # 通过相对路径
         def get_categories(key_dirname):
             # path_dir = Path(os.path.dirname(path_md)).as_posix()
@@ -164,7 +161,8 @@ class CnblogManager:
             index = path_parts.index(key_dirname)
             return list(path_parts[index +1:])
 
-        categories = get_categories(article_dirname if self._is_article(path_md) else essay_dirname)
+        # categories = get_categories(article_dirname if self._is_article(path_md) else essay_dirname)
+        categories = get_categories(self.db_mgr.data["dir_essay"])
         if self.md_fmt.metadata["categories"] != categories:
             self.md_fmt.metadata["categories"] = categories
             self.md_fmt.update_meta()
@@ -236,9 +234,9 @@ class CnblogManager:
         # 保存修改url的Markdown
         md_parser.overwrite()
 
-        if self._is_article(path_md):
-            # 貌似没有用 ??
-            md_parser.metadata["categories"] = ["[文章分类]"] + md_parser.metadata["categories"]
+        # if self._is_article(path_md):
+        #     # 貌似没有用 ??
+        #     md_parser.metadata["categories"] = ["[文章分类]"] + md_parser.metadata["categories"]
 
         blog_title = self.md_fmt.make_title()
         struct_post = {
