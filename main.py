@@ -5,6 +5,7 @@
 # @Version : 0.1.6
 
 import os.path
+import shutil
 from collections import OrderedDict
 
 
@@ -83,24 +84,41 @@ def upload_cnblog(uploader):
         ("modified_added"  , uploader.post_blog),
         ("deleted_added"   , uploader.delete_blog),
         ("new_added"       , uploader.post_blog),
+        ("rename_added"    , uploader.move_blog)
     ])
 
     def execute_upload(action):
         list_files = git.status(action)
 
         for path_file in list_files:
+            isRename = action.startswith("rename")
+            if isRename:
+                path_file, path_to = path_file.split(" -> ")
+
             if not path_file.endswith(".md"):
                 continue
             abspath_file = os.path.join(repo_dir, path_file)
-            map_actions[action](abspath_file)
+            if isRename:
+                abspath_to = os.path.join(repo_dir, path_to)
+                map_actions[action](abspath_file, abspath_to)
+            else:
+                map_actions[action](abspath_file)
 
             # 将文件更新到记录列表
-            if action == "deleted_added":
-                continue
-            repo_files_to_update.append(abspath_file)
             dir_res = abspath_file[:-3]  # 去除.md后缀
-            if os.path.exists(dir_res):
-                repo_files_to_update.append(dir_res)
+            if action == "deleted_added":
+                if os.path.exists(dir_res):
+                    os.rmdir(dir_res)
+                    repo_files_to_update.append(dir_res)
+            elif action == "rename_added":
+                if os.path.exists(dir_res):
+                    dir_to = abspath_to[:-3]
+                    shutil.move(dir_res, dir_to)
+                    repo_files_to_update.extend([dir_res, dir_to])
+            else:
+                repo_files_to_update.append(abspath_file)
+                if os.path.exists(dir_res):
+                    repo_files_to_update.append(dir_res)
 
     for action in map_actions:
         execute_upload(action)

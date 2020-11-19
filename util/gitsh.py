@@ -2,7 +2,7 @@
 # @Date    : 2020-08-04
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 1.0.3
+# @Version : 1.0.4
 
 import os
 import subprocess
@@ -74,7 +74,8 @@ class GitRepo:
                 "modified_unadded"  : state_mixed[1] == "M",  # MM, AM, _M
                 "deleted_added"     : state_mixed[0] == "D",
                 "deleted_unadded"   : state_mixed[1] == "D",
-                # "renamed"   : "R" == state,
+                "rename_added"      : state_mixed[0] == "R",
+                "rename_unadded"    : state_mixed[1] == "R"
             }[type_]
             if checking:
                 list_files.append(path_file)

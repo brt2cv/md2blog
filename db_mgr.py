@@ -415,12 +415,18 @@ if __name__ == "__main__":
         # parser.add_argument("-c", "--selfcheck", action="store_true", help="数据库自检")
         # parser.add_argument("-b", "--rebuild", action="store_true", help="重构.cnblog.json的structure结构")
         # parser.add_argument("-r", "--repair", action="store", help="修复数据库内容")
+        parser.add_argument("-d", "--remove", action="store", help="删除数据库条目【】")
         return parser.parse_args()
 
     args = getopt()
     if args.init:
         DocumentsMgr.template_data(os.path.realpath(args.init))
         exit()
+    else:
+        db_mgr = DocumentsMgr("note/")
+
+    if args.remove:
+        db_mgr.remove_doc(args.remove)
     # else:
     # 默认读取.cnblog.json获取note目录
 

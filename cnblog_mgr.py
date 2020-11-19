@@ -313,6 +313,10 @@ class CnblogManager:
             os.rmdir(dir_md)
         self.db_mgr.remove_doc(path_rel)
 
+    def move_blog(self, path_from, path_to):
+        # 无需cnblog变更
+        self.db_mgr.move_doc(path_from, path_to)
+
     def get_recent_post(self, num=9999):
         """
         return: [{
