@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# @Date    : 2020-07-04
+# @Date    : 2020-11-19
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.2
+# @Version : 0.1.3
 
 import os
-import json
+import yaml  # json
 from pathlib import Path
 from logging import getLogger
 
@@ -67,7 +67,8 @@ class DocumentsMgr:
         }
         path_data = os.path.join(repo_dir, cls.default_conf)
         with open(path_data, "x", encoding="utf8") as fp:
-            json.dump(conf_data, fp, indent=2)  # ensure_ascii=False,
+            # json.dump(conf_data, fp, indent=2)  # ensure_ascii=False,
+            yaml.dump(conf_data, fp, allow_unicode=True)
 
     # def __del__(self):
     #     self.save_interface()
@@ -118,14 +119,16 @@ class DocumentsMgr:
             path_conf = self.get_database()
 
         with open(path_conf, "r", encoding="utf8") as fp:
-            self.data = json.load(fp)
+            # self.data = json.load(fp)
+            self.data = yaml.unsafe_load(fp)
 
     def save_data(self, path_save=None):
         if not path_save:
             path_save = self.get_database()
 
         with open(path_save, "w+", encoding="utf8") as fp:
-            json.dump(self.data, fp, ensure_ascii=False, indent=2)
+            # json.dump(self.data, fp, ensure_ascii=False, indent=2)
+            yaml.dump(self.data, fp, allow_unicode=True)
 
     def backup_data(self):
         """ 备份之前的database文件 """
