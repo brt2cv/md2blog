@@ -1,20 +1,53 @@
 #!/usr/bin/env python3
-# @Date    : 2020-08-04
+# @Date    : 2020-11-19
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 1.0.4
+# @Version : 1.0.6
 
 import os
+
+#####################################################################
+# pcall@Version : 0.2.1
+#####################################################################
 import subprocess
 
+if hasattr(subprocess, 'run'):
+    __PY_VERSION_MINOR = 5  # 高于3.5
+# except AttributeError:
+else:
+    __PY_VERSION_MINOR = 4  # 低于3.4
 
-def run_cmd(str_cmd):
-    """ return a list stdout-lines """
-    completed_process = subprocess.run(str_cmd,
+def _popen(str_cmd):
+    completing_process = subprocess.Popen(str_cmd,
+                                shell=True,
+                                # stdin=subprocess.DEVNULL,
+                                # stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+    # stdout, stderr = completing_process.communicate()
+    return completing_process
+
+
+def pcall(str_cmd, block=True):
+    ''' return a list stdout-lines '''
+    if block:
+        if __PY_VERSION_MINOR == 5:
+            p = subprocess.run(str_cmd,
                                 shell=True,
                                 check=True,
                                 stdout=subprocess.PIPE)
-    return completed_process.stdout.decode().splitlines()
+        else:
+            p = subprocess.check_call(str_cmd,
+                                shell=True)
+        stdout = p.stdout
+    else:
+        p = _popen(str_cmd)
+        stdout = p.communicate()  # timeout=timeout
+    # rc = p.returncode
+    return stdout.decode().splitlines()
+
+#####################################################################
+# end of pcall
+#####################################################################
 
 class GitMixedStatus(Exception):
     """ Git status 状态不纯净（例如AM，即add了新文件，
@@ -49,7 +82,7 @@ class GitRepo:
 
     @switch_dir
     def status(self, type_=None):
-        list_lines = run_cmd("git status -s")
+        list_lines = pcall("git status -s")
         if type_:
             list_lines = self._filter_status(list_lines, type_)
 
@@ -75,7 +108,7 @@ class GitRepo:
                 "deleted_added"     : state_mixed[0] == "D",
                 "deleted_unadded"   : state_mixed[1] == "D",
                 "rename_added"      : state_mixed[0] == "R",
-                "rename_unadded"    : state_mixed[1] == "R"
+                "rename_unadded"    : state_mixed[1] == "R",
             }[type_]
             if checking:
                 list_files.append(path_file)
@@ -94,25 +127,25 @@ class GitRepo:
         if isinstance(list_path, str):
             list_path = [list_path]
         list_path_rel = [self.get_repo_relpath(p) for p in list_path]
-        run_cmd('git add "' + '" "'.join(list_path_rel) + '"')
+        pcall('git add "' + '" "'.join(list_path_rel) + '"')
 
     @switch_dir
     def reset(self, list_path):
         if isinstance(list_path, str):
             list_path = [list_path]
         list_path_rel = [self.get_repo_relpath(p) for p in list_path]
-        run_cmd('git reset "' + '" "'.join(list_path_rel) + '"')
+        pcall('git reset "' + '" "'.join(list_path_rel) + '"')
 
     @switch_dir
-    def commit(self, message):
+    def commit(self, message=None):
         if not message:
             from datetime import datetime
             message = datetime.now().strftime('%a, %b %d %H:%M')
-        run_cmd(f'git commit -m "{message}"')
+        pcall(f'git commit -m "{message}"')
 
     @switch_dir
     def is_status_mixed(self):
-        list_lines = run_cmd("git status -s")
+        list_lines = pcall("git status -s")
         for line in list_lines:
             # _state = line.split(maxsplit=1)[0]
             _state = line[:2].strip()
@@ -124,7 +157,7 @@ class GitRepo:
         str_cmd = "git rev-list --objects --all | awk '{print $2}'"
         if filter_ext:
             str_cmd += f" | grep '{filter_ext}'"
-        list_lines = run_cmd(str_cmd)
+        list_lines = pcall(str_cmd)
         return list_lines
 
 
