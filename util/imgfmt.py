@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2020-09-03
+# @Date    : 2021-01-08
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.5
+# @Version : 0.1.6
 
 import os
 import subprocess
@@ -197,6 +197,9 @@ def format_ext(file_name):
         elif suffix[0] != ".":
             suffix = "." + suffix
 
+    # if base.find("?") >= 0:
+    base = base.split("?", 1)[0]
+
     file_name2 = base + suffix
     return file_name2
 
@@ -212,8 +215,6 @@ def download_src(url_src, save_dir):
 
     # 验证扩展名
     file_name = format_ext(url_src)
-    if file_name.find("?") >= 0:
-        file_name = file_name.split("?", 1)[0]
 
     # 下载图像
     path_save = os.path.join(save_dir,
