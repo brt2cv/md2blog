@@ -445,7 +445,7 @@ if __name__ == "__main__":
     # with open(path_cnblog_conf, "r") as fp:
     #     dict_conf = json.load(fp)
 
-    # repo_dir = dict_conf["repo_dir"]
+    # repo_dir = dict_conf["repo_dir"][platform.system()]
     # mgr = DocumentsMgr(repo_dir)
 
     # if args.selfcheck:

@@ -148,8 +148,10 @@ python3 upload_cnblog.py -a
 * Markdown Preview: 只能在浏览器中预览
 * imagepaste: 这个强烈推荐，可以直接粘贴剪切板图片，并存储在同名目录下。
     - 标准的插件，有个瑕疵： 只能存储为png图像，图像体积较大
-    - 推荐个人修改版本（其实改动很简单），默认存储jpg格式: https://gitee.com/brt2/subl-imgpaste.git
+    - 不支持Linux系统（个人测试未实现功能）
+    - 推荐个人修改版本，默认存储jpg格式，且支持Linux: https://gitee.com/brt2/subl_imgpaste2
 * SublimeTmpl: 用于生成各类文件的模板，包括Markdown
+    - 推荐个人修改版本（其实改动很简单），增加了对Markdown的模板和Python3模板项：https://gitee.com/brt2/subl_ftpl
 * 还有sublime自定义快捷键的功能，可以快速实现对H2/H3...等常见结构的格式化
 
 基于Simpread（简阅）
@@ -190,6 +192,28 @@ Body text...
 
 ```
 
+## 功能列表
+
++ 压缩图像（依赖pngquant，python3-pngquant）
+
+    ```sh
+    python3 main.py -s
+    ```
+
+    然后拖拽需要压缩的图像到命令行窗口即可（支持多选）。
+
++ 下载html，并自动转换为Markdown
+
+    ```sh
+    python3 main.py -d
+    ```
+
++ 下载博客中链接的http图像为本地图片，并更新markdown图像引用地址
+
+    ```sh
+    python3 main.py -p
+    ```
+
 ## Todo List
 
 - [x] 实现对多余图像的挑选和删除
@@ -198,6 +222,7 @@ Body text...
 - [x] 已上传图像的link需要再次验证上传
 - [x] 实现从cnblog获取database，更新本地json数据库
 - [x] 通过url下载html并转换为MarkDown格式
+- [x] 在post上传时，添加博客园的tag标签
 
 ## Buglist
 
@@ -210,5 +235,4 @@ Body text...
 欢迎各界高手施以援手，答疑解惑~
 
 - [ ] 如何将内容直接发布到“文章”中？
-- [ ] 如何在post上传时，添加tag标签？
 - [ ] 如何使用博客园API，实现对博客园“收藏”等内容的管理？

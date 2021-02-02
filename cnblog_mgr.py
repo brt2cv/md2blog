@@ -48,13 +48,19 @@ class CnblogManager:
         self.mime = None
 
         self.md_fmt = MarkdownFormatter()
-        self.md_fmt.set_ignore_websites(["cnblogs.com/blog/" +
-                                        str(self.dict_conf["user_id"])])
+        self.md_fmt.set_ignore_websites(["cnblogs.com/blog/" + self.dict_conf["user_id"]])
 
-        repo_dir = self.dict_conf["repo_dir"]
+        repo_dir = self.get_repodir()
         assert os.path.isabs(repo_dir), "[repo_dir]必须为绝对路径"
         assert repo_dir, "请先为配置文件指定操作的repo目录..."
         self.db_mgr = DocumentsMgr(repo_dir)
+
+    def get_repodir(self):
+        repo_dir = self.dict_conf["repo_dir"]
+        if isinstance(repo_dir, dict):
+            from platform import system
+            repo_dir = repo_dir[system()]
+        return repo_dir
 
     def load_cnblog_conf(self, path_conf):
         with open(path_conf, "r") as fp:
@@ -69,7 +75,7 @@ class CnblogManager:
         #     return path  # just the postid
         if path:
             if os.path.abspath(path):
-                path = os.path.relpath(path, self.dict_conf["repo_dir"])
+                path = os.path.relpath(path, self.get_repodir())
             return self.db_mgr.get_postid_by_path(path)
         elif title:
             return self.db_mgr.get_postid_by_title(title)
@@ -282,7 +288,8 @@ class CnblogManager:
                     self.dict_conf["password"])
 
         dir_download = "cnblog_bak"
-        if not os.path.exists(dir_download): os.makedirs(dir_download)
+        if not os.path.exists(dir_download):
+            os.makedirs(dir_download)
         path_save = f"{dir_download}/{postid}.md"
         with open(path_save, "w", encoding="utf8") as fp:
             fp.write(dict_data['description'])

@@ -72,7 +72,7 @@ def upload_cnblog(uploader):
     # from handle_git import git_status
     from util.gitsh import GitRepo
 
-    repo_dir = uploader.dict_conf["repo_dir"]
+    repo_dir = uploader.get_repodir()
     git = GitRepo(repo_dir)
     if git.is_status_mixed():
         print("当前Stage暂存区有文件未更新至最新状态，无法判定用户明确的上传意图，请更新Repo仓库Git状态")
@@ -140,7 +140,7 @@ def html2markdown(url, save_dir):
     md = html_parser.handle(data_utf8)
     assert md, "解析错误，未转换成Markdown格式文本"
 
-    title = data_utf8.split('<title>')[1].split('</title>')[0]
+    title = data_utf8.split('<title')[1].split(">", 1)[1].split('</title>')[0]
     path_save = os.path.join(save_dir, title + ".md")
     with open(path_save, "w", encoding="utf8") as fp:
         fp.write(md)
@@ -185,7 +185,7 @@ def movefile_db_update(uploader):
 
     from util.gitsh import GitRepo
 
-    repo_dir = uploader.dict_conf["repo_dir"]
+    repo_dir = uploader.get_repodir()
     git = GitRepo(repo_dir)
     if git.is_status_mixed():
         print("当前Stage暂存区有文件未更新至最新状态，无法判定用户明确的上传意图，请更新Repo仓库Git状态")
@@ -218,7 +218,7 @@ def check_db_from_cnblog(uploader):
     }
 
     # 数据库
-    repo_dir = uploader.dict_conf["repo_dir"]
+    repo_dir = uploader.get_repodir()
     doc_mgr = DocumentsMgr(repo_dir)
     db_postids = doc_mgr.data["postids"]
     # db_titles = doc_mgr.data["titles"]
@@ -289,7 +289,7 @@ if __name__ == "__main__":
             import urllib.request as urllib
             from util import html2md
 
-            tmp_dir = os.path.join(uploader.dict_conf["repo_dir"], "download")
+            tmp_dir = os.path.join(uploader.get_repodir(), "download")
             if not os.path.exists(tmp_dir):
                 os.mkdir(tmp_dir)
         elif args.resize:
