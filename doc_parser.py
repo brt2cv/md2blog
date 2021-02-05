@@ -149,11 +149,12 @@ class MarkdownParser:
             ignore_websites = []
 
         self.lock_text()
-        if type_ == "local":
+
+        is_type_local = type_ != "http"
+        if type_ == "all":
             is_type_local = True
+        if type_ == "local":
             type_ = "all"
-        else:
-            is_type_local = False
 
         def match_regex(pattern, text):
             """ 适用于一个group的正则式 """
