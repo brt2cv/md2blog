@@ -141,6 +141,8 @@ def html2markdown(url, save_dir):
     assert md, "解析错误，未转换成Markdown格式文本"
 
     title = data_utf8.split('<title')[1].split(">", 1)[1].split('</title>')[0]
+    if title == "\n":
+        title = "null"
     path_save = os.path.join(save_dir, title + ".md")
     with open(path_save, "w", encoding="utf8") as fp:
         fp.write(md)
@@ -283,16 +285,19 @@ if __name__ == "__main__":
         uploader.download_blog(args.save)
     elif args.move:
         movefile_db_update(uploader)
+    elif args.html2md:
+        import urllib.request as urllib
+        from util import html2md
+
+        path = input("请输入URL地址: ")
+        tmp_dir = os.path.join(uploader.get_repodir(), "download")
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
+        html2markdown(path, tmp_dir)
     else:
         path = input("请输入待处理文件path(支持直接拖拽): ")
-        if args.html2md:
-            import urllib.request as urllib
-            from util import html2md
 
-            tmp_dir = os.path.join(uploader.get_repodir(), "download")
-            if not os.path.exists(tmp_dir):
-                os.mkdir(tmp_dir)
-        elif args.resize:
+        if args.resize:
             ratio = input("请输入默认的缩放比例【默认0.6】: ")
             if not ratio:
                 ratio = "0.6"
@@ -307,8 +312,6 @@ if __name__ == "__main__":
                         uploader.pull_img(path)
                         uploader.md_fmt.convert_png2jpg()
                         uploader.md_fmt.overwrite()
-                    elif args.html2md:
-                        html2markdown(path, tmp_dir)
                     elif args.resize:
                         resize_imgs(path,
                                     ratio_default=ratio,
